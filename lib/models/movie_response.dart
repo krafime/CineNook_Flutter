@@ -13,80 +13,42 @@ class MovieResponse {
 
   factory MovieResponse.fromJson(Map<String, dynamic> json) {
     return MovieResponse(
-      page: json['page'],
-      movies: List<Movie>.from(json['results'].map((x) => Movie.fromJson(x))),
-      totalPages: json['total_pages'],
-      totalResults: json['total_results'],
+      page: json['page'] ?? 0,
+      movies: (json['results'] != null)
+          ? List<Movie>.from(json['results'].map((x) => Movie.fromJson(x)))
+          : [], // Default to empty list if results is null
+      totalPages: json['total_pages'] ?? 0,
+      totalResults: json['total_results'] ?? 0,
     );
   }
 }
 
 class Movie {
-  bool adult;
-  String backdropPath;
-  List<int> genreIds;
   int id;
-  String originalLanguage;
-  String originalTitle;
-  String overview;
-  double popularity;
-  String posterPath;
-  DateTime releaseDate;
-  String title;
-  bool video;
-  double voteAverage;
-  int voteCount;
+  String? originalTitle;
+  String? posterPath;
+  String? title;
 
   Movie({
-    required this.adult,
-    required this.backdropPath,
-    required this.genreIds,
     required this.id,
-    required this.originalLanguage,
-    required this.originalTitle,
-    required this.overview,
-    required this.popularity,
-    required this.posterPath,
-    required this.releaseDate,
-    required this.title,
-    required this.video,
-    required this.voteAverage,
-    required this.voteCount,
+    this.posterPath,
+    this.originalTitle,
+    this.title,
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {
     return Movie(
-      adult: json['adult'],
-      backdropPath: json['backdrop_path'],
-      genreIds: List<int>.from(json['genre_ids']),
       id: json['id'],
-      originalLanguage: json['original_language'],
-      originalTitle: json['original_title'],
-      overview: json['overview'],
-      popularity: json['popularity'],
       posterPath: json['poster_path'],
-      releaseDate: DateTime.parse(json['release_date']),
+      originalTitle: json['original_title'],
       title: json['title'],
-      video: json['video'],
-      voteAverage: json['vote_average'].toDouble(),
-      voteCount: json['vote_count'],
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'adult': adult,
-        'backdrop_path': backdropPath,
-        'genre_ids': List<dynamic>.from(genreIds.map((x) => x)),
         'id': id,
-        'original_language': originalLanguage,
-        'original_title': originalTitle,
-        'overview': overview,
-        'popularity': popularity,
         'poster_path': posterPath,
-        'release_date': releaseDate.toIso8601String(),
+        'original_title': originalTitle,
         'title': title,
-        'video': video,
-        'vote_average': voteAverage,
-        'vote_count': voteCount,
       };
 }

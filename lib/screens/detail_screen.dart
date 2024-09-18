@@ -4,6 +4,7 @@ import 'package:cinenook/constants.dart';
 import 'package:cinenook/models/movie_details.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class DetailScreen extends StatefulWidget {
   final int id;
@@ -39,8 +40,7 @@ class _DetailScreenState extends State<DetailScreen> {
               slivers: [
                 SliverAppBar(
                   automaticallyImplyLeading: false,
-                  expandedHeight:
-                      300, // Tambah tinggi AppBar untuk ruang lebih banyak
+                  expandedHeight: 300, // Increase AppBar height for more space
                   pinned: true,
                   backgroundColor: Colors.transparent,
                   flexibleSpace: FlexibleSpaceBar(
@@ -48,31 +48,43 @@ class _DetailScreenState extends State<DetailScreen> {
                       fit: StackFit.expand,
                       children: [
                         // Backdrop Image
-                        Image.network(
-                          '${Constants.imagePath}${movieDetail.backdropPath}',
-                          fit: BoxFit.cover,
-                        ),
-                        // Overlay hitam dengan opacity
+                        movieDetail.backdropPath.isNotEmpty
+                            ? Image.network(
+                                '${Constants.imagePath}${movieDetail.backdropPath}',
+                                fit: BoxFit.cover,
+                              )
+                            : Image.asset(
+                                'assets/placeholder.png', // Replace with your asset path
+                                fit: BoxFit.cover,
+                              ),
+                        // Black overlay with opacity
                         Container(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withOpacity(0.7),
                         ),
-                        // Poster, judul, rating, dan genre di atas backdrop
+                        // Poster, title, rating, and genre on top of backdrop
                         Positioned(
-                          bottom: 5,
+                          bottom: 10,
                           left: 20,
                           right: 20,
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Poster Film
+                              // Movie Poster
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
-                                child: Image.network(
-                                  '${Constants.imagePath}${movieDetail.posterPath}',
-                                  width: 100,
-                                  height: 150,
-                                  fit: BoxFit.cover,
-                                ),
+                                child: movieDetail.posterPath.isNotEmpty
+                                    ? Image.network(
+                                        '${Constants.imagePath}${movieDetail.posterPath}',
+                                        width: 120,
+                                        height: 180,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.asset(
+                                        'assets/placeholder.png', // Replace with your asset path
+                                        width: 100,
+                                        height: 150,
+                                        fit: BoxFit.cover,
+                                      ),
                               ),
                               const SizedBox(width: 16),
                               // Informasi Film
@@ -87,6 +99,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
                                       ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 4),
                                     Row(
@@ -106,12 +120,13 @@ class _DetailScreenState extends State<DetailScreen> {
                                     // Genre film
                                     Wrap(
                                       spacing: 4,
-                                      runSpacing: -8,
+                                      runSpacing: kIsWeb ? 4 : -8,
+                                      clipBehavior: Clip.antiAlias,
                                       children: [
                                         for (final genre in movieDetail.genres)
                                           Chip(
-                                            padding:
-                                                const EdgeInsets.only(right: 1),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: -3),
                                             label: Text(
                                               genre.name,
                                               style: const TextStyle(
@@ -174,7 +189,9 @@ class _DetailScreenState extends State<DetailScreen> {
                               fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          movieDetail.overview,
+                          movieDetail.overview.isNotEmpty
+                              ? movieDetail.overview
+                              : 'No data',
                           style: const TextStyle(
                               color: Colors.white, fontSize: 12),
                         ),
@@ -201,7 +218,10 @@ class _DetailScreenState extends State<DetailScreen> {
                                         ),
                                       ),
                                       Text(
-                                        _formatDuration(movieDetail.runtime),
+                                        movieDetail.runtime > 0
+                                            ? _formatDuration(
+                                                movieDetail.runtime)
+                                            : 'No data',
                                         style: const TextStyle(
                                             color: Colors.white, fontSize: 12),
                                       )
@@ -256,7 +276,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                         ),
                                       ),
                                       Text(
-                                        movieDetail.originalLanguage,
+                                        movieDetail.spokenLanguages.first
+                                                .englishName.isNotEmpty
+                                            ? movieDetail.spokenLanguages.first
+                                                .englishName
+                                            : 'No data',
                                         style: const TextStyle(
                                             color: Colors.white, fontSize: 12),
                                       )
@@ -279,7 +303,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                         ),
                                       ),
                                       Text(
-                                        movieDetail.popularity.toString(),
+                                        movieDetail.popularity > 0
+                                            ? movieDetail.popularity.toString()
+                                            : 'No data',
                                         style: const TextStyle(
                                             color: Colors.white, fontSize: 12),
                                       ),

@@ -56,4 +56,17 @@ class Api {
       throw Exception('Failed to load detail movie');
     }
   }
+
+  Future<List<Movie>> searchMovies(String query) async {
+    final searchUrl =
+        'https://api.themoviedb.org/3/search/movie?api_key=${Constants.apiKey}&query=$query';
+    final response = await http.get(Uri.parse(searchUrl));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<dynamic> results = data['results'];
+      return results.map((e) => Movie.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to search movies');
+    }
+  }
 }

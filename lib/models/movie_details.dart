@@ -51,30 +51,38 @@ class MovieDetail {
 
   factory MovieDetail.fromJson(Map<String, dynamic> json) {
     return MovieDetail(
-      adult: json['adult'],
-      backdropPath: json['backdrop_path'],
-      budget: json['budget'],
-      genres: List<Genre>.from(json['genres'].map((x) => Genre.fromJson(x))),
-      homepage: json['homepage'],
-      id: json['id'],
-      imdbId: json['imdb_id'],
-      originCountry: List<String>.from(json['origin_country'].map((x) => x)),
-      originalLanguage: json['original_language'],
-      originalTitle: json['original_title'],
+      adult: json['adult'] ?? false,
+      backdropPath: json['backdrop_path'] ?? '',
+      budget: json['budget'] ?? 0,
+      genres: json['genres'] != null
+          ? List<Genre>.from(json['genres'].map((x) => Genre.fromJson(x)))
+          : [],
+      homepage: json['homepage'] ?? '',
+      id: json['id'] ?? 0,
+      imdbId: json['imdb_id'] ?? '',
+      originCountry: json['origin_country'] != null
+          ? List<String>.from(json['origin_country'].map((x) => x))
+          : [],
+      originalLanguage: json['original_language'] ?? '',
+      originalTitle: json['original_title'] ?? 'No Title',
       overview: json['overview'],
-      popularity: json['popularity'],
-      posterPath: json['poster_path'],
-      releaseDate: DateTime.parse(json['release_date']),
-      revenue: json['revenue'],
-      runtime: json['runtime'],
-      spokenLanguages: List<SpokenLanguage>.from(
-          json['spoken_languages'].map((x) => SpokenLanguage.fromJson(x))),
-      status: json['status'],
-      tagline: json['tagline'],
-      title: json['title'],
-      video: json['video'],
-      voteAverage: json['vote_average'],
-      voteCount: json['vote_count'],
+      popularity: json['popularity'] ?? 0.0,
+      posterPath: json['poster_path'] ?? '',
+      releaseDate: json['release_date'] != null
+          ? DateTime.parse(json['release_date'])
+          : DateTime(1970, 1, 1),
+      revenue: json['revenue'] ?? 0,
+      runtime: json['runtime'] ?? 0,
+      spokenLanguages: json['spoken_languages'] != null
+          ? List<SpokenLanguage>.from(
+              json['spoken_languages'].map((x) => SpokenLanguage.fromJson(x)))
+          : [],
+      status: json['status'] ?? 'Unknown',
+      tagline: json['tagline'] ?? '',
+      title: json['title'] ?? 'No Title',
+      video: json['video'] ?? false,
+      voteAverage: json['vote_average'] ?? 0.0,
+      voteCount: json['vote_count'] ?? 0,
     );
   }
 }
@@ -90,8 +98,8 @@ class Genre {
 
   factory Genre.fromJson(Map<String, dynamic> json) {
     return Genre(
-      id: json['id'],
-      name: json['name'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? 'Unknown Genre',
     );
   }
 }
@@ -109,9 +117,9 @@ class SpokenLanguage {
 
   factory SpokenLanguage.fromJson(Map<String, dynamic> json) {
     return SpokenLanguage(
-      englishName: json['english_name'],
-      iso6391: json['iso_639_1'],
-      name: json['name'],
+      englishName: json['english_name'] ?? 'Unknown',
+      iso6391: json['iso_639_1'] ?? '',
+      name: json['name'] ?? 'Unknown Language',
     );
   }
 }
