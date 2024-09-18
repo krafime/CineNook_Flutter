@@ -69,4 +69,17 @@ class Api {
       throw Exception('Failed to search movies');
     }
   }
+
+  Future<List<Movie>> getSimilarMovies(int id) async {
+    final similarMoviesUrl =
+        'https://api.themoviedb.org/3/movie/$id/recommendations?api_key=${Constants.apiKey}';
+    final response = await http.get(Uri.parse(similarMoviesUrl));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<dynamic> results = data['results'];
+      return results.map((e) => Movie.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load similar movies');
+    }
+  }
 }

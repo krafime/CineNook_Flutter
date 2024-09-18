@@ -74,22 +74,52 @@ class MovieItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: movie.posterPath != null
-                    ? Image.network(
-                        imagePath,
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.high,
-                      )
-                    : Image.asset(
-                        'assets/placeholder.png',
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.high,
-                      ),
-              ),
-            ),
+                padding: const EdgeInsets.all(16.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 120, // Explicit width
+                    height: 200, // Explicit height
+                    child: movie.posterPath != null
+                        ? Image.network(
+                            imagePath,
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.high,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  child,
+                                  Center(
+                                    child: CircularProgressIndicator(
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/placeholder.png',
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          )
+                        : Image.asset(
+                            'assets/placeholder.png',
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.high,
+                          ),
+                  ),
+                )),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(

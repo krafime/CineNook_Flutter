@@ -1,6 +1,6 @@
 {
-    "name": "cinenook",
-    "short_name": "cinenook",
+    "name": "CineNook",
+    "short_name": "CineNook",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
