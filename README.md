@@ -9,7 +9,6 @@ CineNook adalah aplikasi pencarian film yang memungkinkan pengguna untuk menjela
 - **Now Playing**: Menampilkan film yang sedang tayang di bioskop saat ini.
 - **Upcoming Movies**: Menampilkan film yang akan datang dalam waktu dekat.
 - **Detail Film**: Menampilkan informasi terperinci tentang film, termasuk genre, durasi, dan informasi terkait lainnya.
-- **Shimmer Effects**: Menambahkan efek shimmer untuk meningkatkan pengalaman pengguna saat data sedang dimuat.
 
 ## Screenshots
 
