@@ -52,9 +52,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _toggleSearch() {
     if (_searchController.text.isNotEmpty) {
       _clearSearch();
+      _searchFocusNode.requestFocus();
     } else {
       setState(() {
-        _isSearching = !_isSearching;
+        _isSearching = true;
         if (_isSearching) {
           _searchFocusNode.requestFocus();
         } else {
@@ -199,15 +200,41 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<bool> _onWillPop() async {
+    if (_isSearching) {
+      _clearSearch();
+      _isSearching = false;
+      return false;
+    }
+
+    final now = DateTime.now();
+    if (lastPressed == null ||
+        now.difference(lastPressed!) > const Duration(seconds: 2)) {
+      lastPressed = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Press back again to exit'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar() as PreferredSizeWidget,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _isSearching ? _buildSearchResults() : _buildHomeContent(),
+    // ignore: deprecated_member_use
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: _buildAppBar() as PreferredSizeWidget,
+        body: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _isSearching ? _buildSearchResults() : _buildHomeContent(),
+          ),
         ),
       ),
     );
