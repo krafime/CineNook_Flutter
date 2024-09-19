@@ -54,4 +54,4 @@ Jika Anda ingin berkontribusi pada proyek ini, silakan ikuti langkah-langkah ber
 Jika Anda memiliki pertanyaan atau saran, jangan ragu untuk menghubungi saya di krafime@gmail.com.
 
 ## Try It Online
-Kamu dapat mencoba proyek ini secara langsung di 🔗[krafime.github.io](https://www.krafime.github.io) untuk demo dan informasi lebih lanjut.
+Kamu dapat mencoba proyek ini secara langsung di 🔗https://krafime.github.io/ untuk demo dan informasi lebih lanjut.
