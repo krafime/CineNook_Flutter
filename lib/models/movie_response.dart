@@ -16,7 +16,7 @@ class MovieResponse {
       page: json['page'] ?? 0,
       movies: (json['results'] != null)
           ? List<Movie>.from(json['results'].map((x) => Movie.fromJson(x)))
-          : [], // Default to empty list if results is null
+          : [],
       totalPages: json['total_pages'] ?? 0,
       totalResults: json['total_results'] ?? 0,
     );

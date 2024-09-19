@@ -1,6 +1,7 @@
 import 'package:cinenook/constants.dart';
 import 'package:cinenook/models/movie_response.dart';
 import 'package:cinenook/screens/detail_screen.dart';
+import 'package:cinenook/transitions/fade_transition.dart';
 import 'package:flutter/material.dart';
 
 class ListMovies extends StatefulWidget {
@@ -56,16 +57,13 @@ class _ListMoviesState extends State<ListMovies> {
 
   void _navigateToDetailScreen(int movieId) async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => DetailScreen(id: movieId),
+      createFadeRoute(
+        DetailScreen(id: movieId),
       ),
     );
 
-    // After returning from DetailScreen
     if (mounted) {
-      setState(() {
-        // Refresh the state if necessary
-      });
+      setState(() {});
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }

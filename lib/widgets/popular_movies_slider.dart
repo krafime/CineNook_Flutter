@@ -1,6 +1,7 @@
 import 'package:cinenook/constants.dart';
 import 'package:cinenook/models/movie_response.dart';
 import 'package:cinenook/screens/detail_screen.dart';
+import 'package:cinenook/transitions/fade_transition.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
@@ -16,7 +17,6 @@ class PopularMovies extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Menentukan parameter berdasarkan lebar layar
         double viewportFraction;
         double height;
         int itemCount;
@@ -75,17 +75,16 @@ class MoviePoster extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailScreen(id: movie.id),
+        Navigator.of(context).push(
+          createFadeRoute(
+            DetailScreen(id: movie.id),
           ),
         );
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: AspectRatio(
-          aspectRatio: 2 / 3, // Rasio poster film standar
+          aspectRatio: 2 / 3,
           child: Image.network(
             '${Constants.imagePath}${movie.posterPath}',
             fit: BoxFit.cover,

@@ -21,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSearching = false;
   List<Movie>? searchMovies;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _searchController.removeListener(_onSearchTextChanged);
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -43,7 +45,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onSearchTextChanged() {
-    // Listener untuk mendeteksi apakah teks di TextField kosong atau tidak
     setState(() {});
   }
 
@@ -53,7 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       setState(() {
         _isSearching = !_isSearching;
-        if (!_isSearching) {
+        if (_isSearching) {
+          _searchFocusNode.requestFocus();
+        } else {
           _clearSearch();
         }
       });
@@ -62,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _clearSearch() {
     _searchController.clear();
+    _searchFocusNode.requestFocus();
     setState(() {
       searchMovies = null;
     });
@@ -100,10 +104,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchField() {
     return TextField(
       controller: _searchController,
+      focusNode: _searchFocusNode,
       autofocus: true,
       decoration: const InputDecoration(
-        hintText: 'Search movies...',
-        hintStyle: TextStyle(color: Colors.white60),
+        hintText: 'Search movies',
+        hintStyle: TextStyle(color: Colors.white),
         border: InputBorder.none,
       ),
       style: const TextStyle(color: Colors.white),

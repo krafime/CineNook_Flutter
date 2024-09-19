@@ -70,32 +70,28 @@ class _DetailScreenState extends State<DetailScreen> {
         children: [
           const SizedBox(width: 16),
           Expanded(
-            flex:
-                1, // Gunakan flex 2 untuk memberikan lebih banyak ruang ke info film
+            flex: 1,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTagline(movieDetail.tagline), // Tagline jika ada
+                if (movieDetail.tagline.isNotEmpty) ...[
+                  _buildTagline(movieDetail.tagline),
+                  const SizedBox(height: 16),
+                ],
+                _buildOverview(movieDetail),
                 const SizedBox(height: 16),
-                _buildOverview(movieDetail), // Sinopsis
-                const SizedBox(height: 16),
-                if (!isWideScreen)
-                  _buildRelatedMovies(
-                      movieDetail.id), // Film terkait untuk layar <= 1200
+                if (!isWideScreen) _buildRelatedMovies(movieDetail.id),
               ],
             ),
           ),
           if (isWideScreen) const SizedBox(width: 16),
           if (isWideScreen)
             Expanded(
-              flex:
-                  1, // Related movies akan berada di kanan untuk layar lebih dari 1200
+              flex: 1,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 16),
-                  _buildRelatedMovies(
-                      movieDetail.id), // Film terkait untuk layar > 1200
+                  _buildRelatedMovies(movieDetail.id),
                 ],
               ),
             ),
@@ -108,9 +104,7 @@ class _DetailScreenState extends State<DetailScreen> {
       BoxConstraints constraints) {
     return SliverAppBar(
       automaticallyImplyLeading: false,
-      expandedHeight: constraints.maxWidth <= 1200
-          ? 300
-          : 400, // Atur tinggi berdasarkan lebar layar
+      expandedHeight: constraints.maxWidth <= 1200 ? 300 : 400,
       pinned: true,
       backgroundColor: Colors.transparent,
       flexibleSpace: FlexibleSpaceBar(
@@ -138,7 +132,7 @@ class _DetailScreenState extends State<DetailScreen> {
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  child, // Tetap tampilkan child agar gambar muncul
+                  child,
                   Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
@@ -180,9 +174,7 @@ class _DetailScreenState extends State<DetailScreen> {
         children: [
           _buildMoviePoster(movieDetail),
           const SizedBox(width: 16),
-          Expanded(
-              child: _buildMovieInfo(
-                  context, movieDetail, constraints)), // Tambahkan constraints
+          Expanded(child: _buildMovieInfo(context, movieDetail, constraints)),
         ],
       ),
     );
@@ -203,7 +195,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 return Stack(
                   fit: StackFit.expand,
                   children: [
-                    child, // Tetap tampilkan child agar gambar muncul
+                    child,
                     Center(
                       child: CircularProgressIndicator(
                         value: loadingProgress.expectedTotalBytes != null
@@ -246,12 +238,9 @@ class _DetailScreenState extends State<DetailScreen> {
         const SizedBox(height: 4),
         _buildRating(movieDetail),
         const SizedBox(height: 4),
-        _buildGenres(movieDetail), // Display genres
-        const SizedBox(
-            height: 16), // Add spacing between genres and additional details
-        if (isSmallScreen)
-          _buildAdditionalDetails(
-              movieDetail), // Show additional details only on small screens
+        _buildGenres(movieDetail),
+        const SizedBox(height: 16),
+        if (isSmallScreen) _buildAdditionalDetails(movieDetail),
       ],
     );
   }
@@ -261,7 +250,8 @@ class _DetailScreenState extends State<DetailScreen> {
       children: [
         const Icon(Icons.star, color: ListColors.ratingColor),
         const SizedBox(width: 4),
-        Text('${movieDetail.voteAverage}/10 (${movieDetail.voteCount})',
+        Text(
+            '${movieDetail.voteAverage.toStringAsFixed(2)}/10 (${movieDetail.voteCount})',
             style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
       ],
     );
@@ -290,7 +280,6 @@ class _DetailScreenState extends State<DetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (movieDetail.tagline.isNotEmpty) _buildTagline(movieDetail.tagline),
-        const SizedBox(height: 8),
         _buildOverview(movieDetail),
         const SizedBox(height: 16),
         _buildAdditionalDetails(movieDetail),
@@ -307,6 +296,7 @@ class _DetailScreenState extends State<DetailScreen> {
       child: Center(
         child: Text(
           tagline,
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontStyle: FontStyle.italic,
@@ -338,7 +328,7 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildAdditionalDetails(MovieDetail movieDetail) {
     return Container(
       constraints: const BoxConstraints(
-        maxWidth: 600, // Set your desired maximum width here
+        maxWidth: 600,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

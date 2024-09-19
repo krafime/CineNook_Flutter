@@ -1,7 +1,9 @@
 import 'package:cinenook/constants.dart';
 import 'package:cinenook/models/movie_response.dart';
 import 'package:cinenook/screens/detail_screen.dart';
+import 'package:cinenook/transitions/fade_transition.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class GridMovies extends StatelessWidget {
   const GridMovies({
@@ -20,14 +22,10 @@ class GridMovies extends StatelessWidget {
       width: double.infinity,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: _getCrossAxisCount(constraints.maxWidth),
-              crossAxisSpacing: 8.0,
-              mainAxisSpacing: 8.0,
-              childAspectRatio: 0.6,
-            ),
-            physics: const BouncingScrollPhysics(),
+          return MasonryGridView.count(
+            crossAxisCount: _getCrossAxisCount(constraints.maxWidth),
+            mainAxisSpacing: 8.0,
+            crossAxisSpacing: 8.0,
             itemCount: movies.length,
             itemBuilder: (context, index) {
               final movie = movies[index];
@@ -55,73 +53,65 @@ class MovieItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final imagePath = movie.posterPath != null
         ? '${Constants.imagePath}${movie.posterPath}'
-        : 'assets/placeholder.png'; // Ganti dengan asset path yang benar
+        : 'assets/placeholder.png';
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailScreen(id: movie.id),
+        Navigator.of(context).push(
+          createFadeRoute(
+            DetailScreen(id: movie.id),
           ),
         );
       },
       child: Card(
-        color: Theme.of(context).colorScheme.surfaceContainer,
+        color: Theme.of(context).colorScheme.inversePrimary,
         elevation: 4,
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Wraps the content based on its size
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: SizedBox(
-                    width: 120, // Explicit width
-                    height: 200, // Explicit height
-                    child: movie.posterPath != null
-                        ? Image.network(
-                            imagePath,
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.high,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  child,
-                                  Center(
-                                    child: CircularProgressIndicator(
-                                      value:
-                                          loadingProgress.expectedTotalBytes !=
-                                                  null
-                                              ? loadingProgress
-                                                      .cumulativeBytesLoaded /
-                                                  loadingProgress
-                                                      .expectedTotalBytes!
-                                              : null,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/placeholder.png',
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          )
-                        : Image.asset(
+            AspectRatio(
+              aspectRatio: 2 / 3,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: movie.posterPath != null
+                    ? Image.network(
+                        imagePath,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              child,
+                              Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
                             'assets/placeholder.png',
                             fit: BoxFit.cover,
-                            filterQuality: FilterQuality.high,
-                          ),
-                  ),
-                )),
+                          );
+                        },
+                      )
+                    : Image.asset(
+                        'assets/placeholder.png',
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                      ),
+              ),
+            ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.all(8.0),
               child: Text(
                 movie.title.toString(),
                 textAlign: TextAlign.center,
@@ -131,7 +121,7 @@ class MovieItem extends StatelessWidget {
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
                 maxLines: 2,
-                overflow: TextOverflow.ellipsis, // Limit text to avoid overflow
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
