@@ -26,10 +26,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initializeMovieLists();
+    _searchController.addListener(_onSearchTextChanged);
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchTextChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -40,13 +42,22 @@ class _HomeScreenState extends State<HomeScreen> {
     upcomingMovies = Api().getUpcomingPlayingMovies();
   }
 
+  void _onSearchTextChanged() {
+    // Listener untuk mendeteksi apakah teks di TextField kosong atau tidak
+    setState(() {});
+  }
+
   void _toggleSearch() {
-    setState(() {
-      _isSearching = !_isSearching;
-      if (!_isSearching) {
-        _clearSearch();
-      }
-    });
+    if (_searchController.text.isNotEmpty) {
+      _clearSearch();
+    } else {
+      setState(() {
+        _isSearching = !_isSearching;
+        if (!_isSearching) {
+          _clearSearch();
+        }
+      });
+    }
   }
 
   void _clearSearch() {

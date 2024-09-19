@@ -43,14 +43,7 @@ class _ListMoviesState extends State<ListMovies> {
               return Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetailScreen(id: movie.id),
-                      ),
-                    );
-                  },
+                  onTap: () => _navigateToDetailScreen(movie.id),
                   child: _buildMoviePoster(movie),
                 ),
               );
@@ -61,10 +54,28 @@ class _ListMoviesState extends State<ListMovies> {
     );
   }
 
+  void _navigateToDetailScreen(int movieId) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => DetailScreen(id: movieId),
+      ),
+    );
+
+    // After returning from DetailScreen
+    if (mounted) {
+      setState(() {
+        // Refresh the state if necessary
+      });
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
   Widget _buildMoviePoster(Movie movie) {
     final imagePath = movie.posterPath != null
         ? '${Constants.imagePath}${movie.posterPath}'
-        : null; // Ubah ini menjadi null jika tidak ada gambar
+        : null;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
@@ -81,7 +92,7 @@ class _ListMoviesState extends State<ListMovies> {
                   return Stack(
                     fit: StackFit.expand,
                     children: [
-                      child, // Tetap tampilkan child agar gambar muncul
+                      child,
                       Center(
                         child: CircularProgressIndicator(
                           value: loadingProgress.expectedTotalBytes != null
@@ -97,7 +108,7 @@ class _ListMoviesState extends State<ListMovies> {
             : Image.asset(
                 'assets/placeholder.png',
                 fit: BoxFit.cover,
-              ), // Placeholder jika tidak ada gambar
+              ),
       ),
     );
   }

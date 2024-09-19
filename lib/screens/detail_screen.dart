@@ -428,17 +428,11 @@ class _DetailScreenState extends State<DetailScreen> {
               } else if (snapshot.hasError) {
                 return const Center(
                     child: Text('Failed to load related movies'));
-              } else if (snapshot.hasData) {
-                if (snapshot.data!.isNotEmpty) {
-                  return ListMovies(
-                    snapshot: AsyncSnapshot.withData(
-                        ConnectionState.done, snapshot.data!),
-                  );
-                } else {
-                  return Text('No data found',
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface));
-                }
+              } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                return ListMovies(
+                  snapshot: AsyncSnapshot.withData(
+                      ConnectionState.done, snapshot.data!),
+                );
               } else {
                 return Text('No data found',
                     style: TextStyle(
