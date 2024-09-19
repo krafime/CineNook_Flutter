@@ -32,7 +32,7 @@ CineNook adalah aplikasi pencarian film yang memungkinkan pengguna untuk menjela
 3. **Install dependencies:**
    ```
    flutter pub get
-4. **Add Constants files in lib folder using your credential API at ![TMDB](https://www.themoviedb.org/settings/api)**
+4. **Add Constants files in lib folder using your credential API at [TMDB](https://www.themoviedb.org/settings/api)**
 5. **Run the application:**
    ```
    flutter run
@@ -54,4 +54,4 @@ Jika Anda ingin berkontribusi pada proyek ini, silakan ikuti langkah-langkah ber
 Jika Anda memiliki pertanyaan atau saran, jangan ragu untuk menghubungi saya di krafime@gmail.com.
 
 ## Try It Online
-Kamu dapat mencoba proyek ini secara langsung di ![krafime.github.io](krafime.github.io) untuk demo dan informasi lebih lanjut.
+Kamu dapat mencoba proyek ini secara langsung di 🔗[krafime.github.io](krafime.github.io) untuk demo dan informasi lebih lanjut.
