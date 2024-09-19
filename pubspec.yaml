@@ -1,13 +1,14 @@
 name: cinenook
 description: "A new Flutter project."
 
-publish_to: "none" 
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
   sdk: ^3.5.3
 
 dependencies:
+  back_button_interceptor: ^7.0.3
   carousel_slider: ^5.0.0
   country_codes: ^3.1.0+2
   cupertino_icons: ^1.0.8
@@ -27,29 +28,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
+
   assets:
     - assets/
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  

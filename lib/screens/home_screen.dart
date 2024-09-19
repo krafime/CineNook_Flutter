@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Movie>? searchMovies;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  DateTime? lastPressed;
 
   @override
   void initState() {
@@ -65,10 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _clearSearch() {
     _searchController.clear();
-    _searchFocusNode.requestFocus();
     setState(() {
       searchMovies = null;
     });
+    if (_searchFocusNode.hasFocus) {
+      _searchFocusNode.unfocus();
+    }
   }
 
   Future<void> _performSearch(String query) async {
