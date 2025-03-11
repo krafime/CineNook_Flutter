@@ -1,9 +1,18 @@
-import 'package:cinenook/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'auth_gate.dart';
+import 'firebase_options.dart';
 import 'package:cinenook/colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
 
@@ -19,7 +28,8 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: ListColors.scaffoldBgColor,
         textTheme: GoogleFonts.poppinsTextTheme(),
       ),
-      home: const HomeScreen(),
+      themeMode: ThemeMode.system,
+      home: const AuthGate(),
     );
   }
 }

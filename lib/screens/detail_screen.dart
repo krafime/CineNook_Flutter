@@ -112,7 +112,9 @@ class _DetailScreenState extends State<DetailScreen> {
           fit: StackFit.expand,
           children: [
             _buildBackdropImage(movieDetail),
-            Container(color: Colors.black.withOpacity(0.7)),
+            Container(
+                color: Colors.black
+                    .withValues(red: 0, green: 0, blue: 0, alpha: 0.7)),
             _buildPosterAndInfo(context, movieDetail, constraints),
             _buildBackButton(context),
           ],

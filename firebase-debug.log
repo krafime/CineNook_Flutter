@@ -1,0 +1,27 @@
+[debug] [2025-03-08T04:52:09.009Z] ----------------------------------------------------------------------
+[debug] [2025-03-08T04:52:09.012Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\krafi\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2025-03-08T04:52:09.012Z] CLI Version:   13.33.0
+[debug] [2025-03-08T04:52:09.012Z] Platform:      win32
+[debug] [2025-03-08T04:52:09.012Z] Node Version:  v22.14.0
+[debug] [2025-03-08T04:52:09.012Z] Time:          Sat Mar 08 2025 11:52:09 GMT+0700 (Indochina Time)
+[debug] [2025-03-08T04:52:09.013Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-03-08T04:52:09.154Z] Object "" in "firebase.json" has unknown property: {"additionalProperty":"flutter"}
+[debug] [2025-03-08T04:52:09.157Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-03-08T04:52:09.157Z] > authorizing via signed-in user (krafime@gmail.com)
+[debug] [2025-03-08T04:52:09.158Z] Object "" in "firebase.json" has unknown property: {"additionalProperty":"flutter"}
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\krafi\OneDrive\Documents\Flutter Project\CineNook_Flutter
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+

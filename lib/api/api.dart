@@ -72,7 +72,7 @@ class Api {
 
   Future<List<Movie>> getSimilarMovies(int id) async {
     final similarMoviesUrl =
-        'https://api.themoviedb.org/3/movie/$id/recommendations?api_key=${Constants.apiKey}';
+        'https://api.themoviedb.org/3/movie/$id/similar?api_key=${Constants.apiKey}';
     final response = await http.get(Uri.parse(similarMoviesUrl));
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);

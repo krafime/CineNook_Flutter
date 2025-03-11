@@ -3,9 +3,12 @@ import 'package:cinenook/models/movie_response.dart';
 import 'package:cinenook/widgets/grid_movies_slider.dart';
 import 'package:cinenook/widgets/popular_movies_slider.dart';
 import 'package:cinenook/widgets/list_movies_slider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_glow/flutter_glow.dart';
+
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -90,6 +93,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _signOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error signing out: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   Widget _buildAppBar() {
     return AppBar(
       title: _isSearching ? _buildSearchField() : _buildAppTitle(),
@@ -100,6 +120,11 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: Icon(_isSearching ? Icons.close : Icons.search),
           onPressed: _toggleSearch,
           tooltip: _isSearching ? 'Cancel search' : 'Search',
+        ),
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: _signOut,
+          tooltip: 'Logout',
         ),
       ],
     );
@@ -122,12 +147,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAppTitle() {
-    return GlowText(
-      'CineNook',
-      style: GoogleFonts.poppins(
-        fontSize: 36,
-        fontWeight: FontWeight.bold,
-        color: Colors.red,
+    return Hero(
+      tag: 'logo',
+      child: GlowText(
+        'CineNook',
+        style: GoogleFonts.poppins(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+            decoration: TextDecoration.none),
+        glowColor: Colors.red,
       ),
     );
   }

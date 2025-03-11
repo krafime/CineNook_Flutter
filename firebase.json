@@ -1,0 +1,27 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "cinenook-flutter",
+          "appId": "1:215921381040:android:4b9eb3cb129ad214fbf575",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "cinenook-flutter",
+          "configurations": {
+            "android": "1:215921381040:android:4b9eb3cb129ad214fbf575",
+            "ios": "1:215921381040:ios:92b8bf20014d4279fbf575",
+            "web": "1:215921381040:web:e46f695af5e2e7fbfbf575"
+          }
+        }
+      }
+    }
+  }
+}
