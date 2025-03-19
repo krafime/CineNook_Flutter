@@ -8,9 +8,13 @@ class ListMovies extends StatefulWidget {
   const ListMovies({
     super.key,
     required this.snapshot,
+    this.itemWidth = 140,
+    this.searchQuery, // added
   });
 
   final AsyncSnapshot<List<Movie>> snapshot;
+  final double itemWidth;
+  final String? searchQuery; // added
 
   @override
   State<ListMovies> createState() => _ListMoviesState();
@@ -56,17 +60,30 @@ class _ListMoviesState extends State<ListMovies> {
   }
 
   void _navigateToDetailScreen(int movieId) async {
-    await Navigator.of(context).push(
-      createFadeRoute(
-        DetailScreen(id: movieId),
-      ),
-    );
+    // Get the current route name
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+
+    // If we're already on a detail screen, replace the current screen
+    if (currentRoute == '/details' ||
+        currentRoute?.startsWith('/details/') == true) {
+      await Navigator.of(context).pushReplacement(
+        createFadeRoute(
+          DetailScreen(
+              id: movieId, searchQuery: widget.searchQuery), // modified
+        ),
+      );
+    } else {
+      // Normal navigation from home or other screens
+      await Navigator.of(context).push(
+        createFadeRoute(
+          DetailScreen(
+              id: movieId, searchQuery: widget.searchQuery), // modified
+        ),
+      );
+    }
 
     if (mounted) {
       setState(() {});
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
     }
   }
 
@@ -79,7 +96,7 @@ class _ListMoviesState extends State<ListMovies> {
       borderRadius: BorderRadius.circular(10),
       child: SizedBox(
         height: 200,
-        width: 120,
+        width: widget.itemWidth,
         child: imagePath != null
             ? Image.network(
                 imagePath,

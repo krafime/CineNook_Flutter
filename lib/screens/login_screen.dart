@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_glow/flutter_glow.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:firebase_core/firebase_core.dart';
-
-import 'home_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cinenook/blocs/auth/auth_bloc.dart';
+import 'package:cinenook/blocs/auth/auth_event.dart';
+import 'package:cinenook/blocs/auth/auth_state.dart';
+import 'package:flutter/scheduler.dart' show timeDilation;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,186 +15,169 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Removed email and password controllers
   final _formKey = GlobalKey<FormState>();
-  late final FirebaseAuth _auth;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   void initState() {
     super.initState();
-    _initializeFirebase();
-  }
-
-  Future<void> _initializeFirebase() async {
-    try {
-      await Firebase.initializeApp();
-      _auth = FirebaseAuth.instance;
-    } catch (e) {
-      setState(() {
-        _errorMessage = "Failed to initialize Firebase: ${e.toString()}";
-      });
-    }
-  }
-
-  bool _isLoading = false;
-  String? _errorMessage;
-
-  @override
-  void dispose() {
-    // Removed controller disposal
-    super.dispose();
-  }
-
-  // Removed _signInWithEmailAndPassword method
-
-  Future<void> _signInWithGoogle() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        // User canceled sign-in
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Sign in to Firebase with the Google credential
-      final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user;
-
-      // Show welcome toast with user's name
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome, ${user?.displayName ?? 'User'}!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-
-        // Navigate after showing the toast
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            );
-          }
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = "Failed to sign in with Google";
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    timeDilation = 2.5; // 1.0 means normal animation speed.
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Form(
-            key: _formKey,
-            child: Center(
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Hero(
-                      tag: 'logo',
-                      child: GlowText(
-                        'CineNook',
-                        style: GoogleFonts.poppins(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                          decoration: TextDecoration.none,
-                        ),
-                        textAlign: TextAlign.center,
-                        glowColor: Colors.red,
-                      ),
-                    ),
-                    Text(
-                      'Your Personalized Film Explorer',
-                      style: TextStyle(
-                          fontSize: 18,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 36),
-
-                    // Error message
-                    if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        color: Colors.red[100],
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: Colors.red),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-
-                    const SizedBox(height: 16),
-
-                    // Removed email field, password field, forgot password link, and login button
-
-                    // Google Sign In
-                    OutlinedButton.icon(
-                      icon: Image.asset('assets/google_logo.png',
-                          height: 24), // Add Google logo image
-                      label: const Text('Sign in with Google'),
-                      onPressed: _isLoading ? null : _signInWithGoogle,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-                    // Register option
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.center,
-                    //   children: [
-                    //     Text("Don't have an account?",
-                    //         style: TextStyle(
-                    //             color: Theme.of(context).colorScheme.onSurface,
-                    //             fontSize: 14)),
-                    //     TextButton(
-                    //       onPressed: () {
-                    //         // Navigate to registration screen
-                    //       },
-                    //       child: const Text('Sign Up'),
-                    //     ),
-                    //   ],
-                    // ),
-                  ],
-                ),
+      body: BlocConsumer<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is Authenticated) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Welcome, ${state.user.displayName ?? 'User'}!'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
               ),
-            ),
-          ),
-        ),
+            );
+
+            Future.delayed(const Duration(seconds: 1), () {
+              if (context.mounted) {
+                Navigator.of(context).pushReplacementNamed('/home');
+              }
+            });
+          } else if (state is AuthError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // Define sizes based on width
+              final width = constraints.maxWidth;
+
+              // Determine screen size category
+              final isSmallScreen = width < 600;
+              final isMediumScreen = width >= 600 && width < 900;
+              final isLargeScreen = width >= 900;
+
+              // Adjust padding based on screen size
+              final horizontalPadding =
+                  isSmallScreen ? 24.0 : (isMediumScreen ? 48.0 : 64.0);
+
+              // Adjust logo size based on screen width
+              final logoSize =
+                  isSmallScreen ? 48.0 : (isMediumScreen ? 64.0 : 72.0);
+
+              // Calculate content width for larger screens
+              final contentMaxWidth = isLargeScreen ? 500.0 : width;
+
+              return SafeArea(
+                child: Center(
+                  // Center everything
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    child: Form(
+                      key: _formKey,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(height: isSmallScreen ? 20 : 40),
+
+                            Hero(
+                              tag: 'logo',
+                              child: GlowText(
+                                'CineNook',
+                                style: GoogleFonts.poppins(
+                                  fontSize: logoSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                  decoration: TextDecoration.none,
+                                ),
+                                textAlign: TextAlign.center,
+                                glowColor: Colors.red,
+                              ),
+                            ),
+
+                            Text(
+                              'Your Personalized Film Explorer',
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 18 : 22,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+
+                            SizedBox(height: isSmallScreen ? 36 : 48),
+
+                            // Error message
+                            if (state is AuthError)
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                color: Colors.red[100],
+                                child: Text(
+                                  state.message,
+                                  style: const TextStyle(color: Colors.red),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+
+                            const SizedBox(height: 16),
+
+                            // Google Sign In
+                            Container(
+                              constraints: BoxConstraints(
+                                maxWidth: isLargeScreen ? 400 : double.infinity,
+                              ),
+                              alignment: Alignment.center,
+                              child: OutlinedButton.icon(
+                                icon: Image.asset('assets/google_logo.png',
+                                    height: 24),
+                                label: Text(
+                                  'Sign in with Google',
+                                  style: TextStyle(
+                                      fontSize: isSmallScreen ? 16 : 18),
+                                ),
+                                onPressed: state is AuthLoading
+                                    ? null
+                                    : () {
+                                        context
+                                            .read<AuthBloc>()
+                                            .add(GoogleSignInRequested());
+                                      },
+                                style: OutlinedButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: isSmallScreen ? 12 : 16,
+                                    horizontal: isSmallScreen ? 16 : 24,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            if (state is AuthLoading)
+                              const Center(child: CircularProgressIndicator()),
+
+                            SizedBox(height: isSmallScreen ? 20 : 40),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

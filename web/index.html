@@ -29,6 +29,11 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.ico" />
 
+    <meta
+      name="google-signin-client_id"
+      content="215921381040-srck5ql8s3d47b1p09epclrqghbp8pjd.apps.googleusercontent.com"
+    />
+
     <title>CineNook</title>
     <link rel="manifest" href="manifest.json" />
   </head>
@@ -38,6 +43,7 @@
       // Import the functions you need from the SDKs you need
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
+      import { getAuth } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
       // TODO: Add SDKs for Firebase products that you want to use
       // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -56,6 +62,7 @@
       // Initialize Firebase
       const app = initializeApp(firebaseConfig);
       const analytics = getAnalytics(app);
+      const auth = getAuth(app);
     </script>
   </body>
 </html>

@@ -1,95 +1,74 @@
 class MovieDetail {
-  bool adult;
-  String backdropPath;
-  int budget;
-  List<Genre> genres;
-  String homepage;
-  int id;
-  String imdbId;
-  List<String> originCountry;
-  String originalLanguage;
-  String originalTitle;
-  String overview;
-  double popularity;
-  String posterPath;
-  DateTime releaseDate;
-  int revenue;
-  int runtime;
-  List<SpokenLanguage> spokenLanguages;
-  String status;
-  String tagline;
-  String title;
-  bool video;
-  double voteAverage;
-  int voteCount;
+  final int id;
+  final String title;
+  final String overview;
+  final String posterPath;
+  final String backdropPath;
+  final double voteAverage;
+  final int voteCount;
+  final int runtime;
+  final DateTime? releaseDate;
+  final double popularity;
+  final List<Genre> genres;
+  final List<SpokenLanguage> spokenLanguages;
+  final String tagline;
 
   MovieDetail({
-    required this.adult,
-    required this.backdropPath,
-    required this.budget,
-    required this.genres,
-    required this.homepage,
     required this.id,
-    required this.imdbId,
-    required this.originCountry,
-    required this.originalLanguage,
-    required this.originalTitle,
-    required this.overview,
-    required this.popularity,
-    required this.posterPath,
-    required this.releaseDate,
-    required this.revenue,
-    required this.runtime,
-    required this.spokenLanguages,
-    required this.status,
-    required this.tagline,
     required this.title,
-    required this.video,
+    required this.overview,
+    required this.posterPath,
+    required this.backdropPath,
     required this.voteAverage,
     required this.voteCount,
+    required this.runtime,
+    this.releaseDate,
+    required this.popularity,
+    required this.genres,
+    required this.spokenLanguages,
+    required this.tagline,
   });
 
   factory MovieDetail.fromJson(Map<String, dynamic> json) {
+    DateTime? parsedReleaseDate;
+
+    // Safely parse the release date
+    if (json['release_date'] != null &&
+        json['release_date'].toString().isNotEmpty) {
+      try {
+        parsedReleaseDate = DateTime.parse(json['release_date'].toString());
+      } catch (e) {
+        throw Exception('Failed to parse release date: ${e.toString()}');
+        // Keep parsedReleaseDate as null if parsing fails
+      }
+    }
+
     return MovieDetail(
-      adult: json['adult'] ?? false,
+      id: json['id'] ?? 0,
+      title: json['title'] ?? '',
+      overview: json['overview'] ?? '',
+      posterPath: json['poster_path'] ?? '',
       backdropPath: json['backdrop_path'] ?? '',
-      budget: json['budget'] ?? 0,
+      voteAverage: (json['vote_average'] ?? 0).toDouble(),
+      voteCount: json['vote_count'] ?? 0,
+      runtime: json['runtime'] ?? 0,
+      releaseDate: parsedReleaseDate,
+      popularity: (json['popularity'] ?? 0).toDouble(),
       genres: json['genres'] != null
           ? List<Genre>.from(json['genres'].map((x) => Genre.fromJson(x)))
           : [],
-      homepage: json['homepage'] ?? '',
-      id: json['id'] ?? 0,
-      imdbId: json['imdb_id'] ?? '',
-      originCountry: json['origin_country'] != null
-          ? List<String>.from(json['origin_country'].map((x) => x))
-          : [],
-      originalLanguage: json['original_language'] ?? '',
-      originalTitle: json['original_title'] ?? 'No Title',
-      overview: json['overview'],
-      popularity: json['popularity'] ?? 0.0,
-      posterPath: json['poster_path'] ?? '',
-      releaseDate: json['release_date'] != null
-          ? DateTime.parse(json['release_date'])
-          : DateTime(1970, 1, 1),
-      revenue: json['revenue'] ?? 0,
-      runtime: json['runtime'] ?? 0,
       spokenLanguages: json['spoken_languages'] != null
           ? List<SpokenLanguage>.from(
               json['spoken_languages'].map((x) => SpokenLanguage.fromJson(x)))
           : [],
-      status: json['status'] ?? 'Unknown',
       tagline: json['tagline'] ?? '',
-      title: json['title'] ?? 'No Title',
-      video: json['video'] ?? false,
-      voteAverage: json['vote_average'] ?? 0.0,
-      voteCount: json['vote_count'] ?? 0,
     );
   }
 }
 
 class Genre {
-  int id;
-  String name;
+  final int id;
+  final String name;
 
   Genre({
     required this.id,
@@ -99,27 +78,21 @@ class Genre {
   factory Genre.fromJson(Map<String, dynamic> json) {
     return Genre(
       id: json['id'] ?? 0,
-      name: json['name'] ?? 'Unknown Genre',
+      name: json['name'] ?? '',
     );
   }
 }
 
 class SpokenLanguage {
-  String englishName;
-  String iso6391;
-  String name;
+  final String name;
 
   SpokenLanguage({
-    required this.englishName,
-    required this.iso6391,
     required this.name,
   });
 
   factory SpokenLanguage.fromJson(Map<String, dynamic> json) {
     return SpokenLanguage(
-      englishName: json['english_name'],
-      iso6391: json['iso_639_1'] ?? '',
-      name: json['name'] ?? 'Unknown Language',
+      name: json['english_name'] ?? json['name'] ?? '',
     );
   }
 }

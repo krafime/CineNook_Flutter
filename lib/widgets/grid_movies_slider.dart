@@ -6,12 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class GridMovies extends StatelessWidget {
+  final AsyncSnapshot snapshot;
+  final int crossAxisCount;
+  final String? searchQuery; // added
+
   const GridMovies({
     super.key,
     required this.snapshot,
+    this.crossAxisCount = 2,
+    this.searchQuery, // added
   });
-
-  final AsyncSnapshot<List<Movie>> snapshot;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +33,8 @@ class GridMovies extends StatelessWidget {
             itemCount: movies.length,
             itemBuilder: (context, index) {
               final movie = movies[index];
-              return MovieItem(movie: movie);
+              return MovieItem(
+                  movie: movie, searchQuery: searchQuery); // modified
             },
           );
         },
@@ -45,9 +50,11 @@ class GridMovies extends StatelessWidget {
 }
 
 class MovieItem extends StatelessWidget {
-  const MovieItem({super.key, required this.movie});
-
   final Movie movie;
+  final String? searchQuery; // added
+
+  const MovieItem(
+      {super.key, required this.movie, this.searchQuery}); // modified
 
   @override
   Widget build(BuildContext context) {
@@ -57,11 +64,22 @@ class MovieItem extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          createFadeRoute(
-            DetailScreen(id: movie.id),
-          ),
-        );
+        // Navigate to details as before
+        final currentRoute = ModalRoute.of(context)?.settings.name;
+        if (currentRoute == '/details' ||
+            currentRoute?.startsWith('/details/') == true) {
+          Navigator.of(context).pushReplacement(
+            createFadeRoute(
+              DetailScreen(id: movie.id, searchQuery: searchQuery), // modified
+            ),
+          );
+        } else {
+          Navigator.of(context).push(
+            createFadeRoute(
+              DetailScreen(id: movie.id, searchQuery: searchQuery), // modified
+            ),
+          );
+        }
       },
       child: Card(
         color: Theme.of(context).colorScheme.inversePrimary,

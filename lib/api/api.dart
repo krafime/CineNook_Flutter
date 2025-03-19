@@ -3,83 +3,84 @@ import 'package:cinenook/constants.dart';
 import 'package:cinenook/models/movie_details.dart';
 import 'package:cinenook/models/movie_response.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 
 class Api {
-  static const _popularUrl =
-      'https://api.themoviedb.org/3/movie/popular?api_key=${Constants.apiKey}';
-  static const _nowPlayingUrl =
-      'https://api.themoviedb.org/3/movie/now_playing?api_key=${Constants.apiKey}';
-  static const _upcomingMoviesUrl =
-      'https://api.themoviedb.org/3/movie/upcoming?api_key=${Constants.apiKey}';
+  // Base URL for TMDB API
+  static const String _baseUrl = 'https://api.themoviedb.org/3';
+
+  // Endpoint URLs for different movie categories
+  static const String _popularUrl =
+      '$_baseUrl/movie/popular?api_key=${Constants.apiKey}';
+  static const String _nowPlayingUrl =
+      '$_baseUrl/movie/now_playing?api_key=${Constants.apiKey}';
+  static const String _upcomingMoviesUrl =
+      '$_baseUrl/movie/upcoming?api_key=${Constants.apiKey}';
+
+  static final Logger _logger = Logger('API');
+
+  // Helper method to handle API requests and parse movie lists
+  Future<List<Movie>> _getMovieList(String url, String errorMessage) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> results = data['results'];
+        return results.map((e) => Movie.fromJson(e)).toList();
+      } else {
+        _logger.severe(
+            'API Error: $errorMessage with status code: ${response.statusCode}');
+        _logger.severe('Response body: ${response.body}');
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      _logger.severe('API Exception: $errorMessage: ${e.toString()}');
+      throw Exception('$errorMessage: ${e.toString()}');
+    }
+  }
 
   Future<List<Movie>> getPopularMovies() async {
-    final response = await http.get(Uri.parse(_popularUrl));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<dynamic> results = data['results'];
-      return results.map((e) => Movie.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load popular movies');
-    }
+    return _getMovieList(_popularUrl, 'Failed to load popular movies');
   }
 
   Future<List<Movie>> getNowPlayingMovies() async {
-    final response = await http.get(Uri.parse(_nowPlayingUrl));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<dynamic> results = data['results'];
-      return results.map((e) => Movie.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load playing movies');
-    }
+    return _getMovieList(_nowPlayingUrl, 'Failed to load now playing movies');
   }
 
-  Future<List<Movie>> getUpcomingPlayingMovies() async {
-    final response = await http.get(Uri.parse(_upcomingMoviesUrl));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<dynamic> results = data['results'];
-      return results.map((e) => Movie.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load upcoming movies');
-    }
+  // Renamed from getUpcomingPlayingMovies to getUpcomingMovies to match event naming
+  Future<List<Movie>> getUpcomingMovies() async {
+    return _getMovieList(_upcomingMoviesUrl, 'Failed to load upcoming movies');
   }
 
+  /// Fetches detailed information about a specific movie
   Future<MovieDetail> getDetailMovie(int id) async {
-    final detailMovieUrl =
-        'https://api.themoviedb.org/3/movie/$id?api_key=${Constants.apiKey}';
-    final response = await http.get(Uri.parse(detailMovieUrl));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      return MovieDetail.fromJson(data);
-    } else {
-      throw Exception('Failed to load detail movie');
+    try {
+      final detailMovieUrl = '$_baseUrl/movie/$id?api_key=${Constants.apiKey}';
+      final response = await http.get(Uri.parse(detailMovieUrl));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return MovieDetail.fromJson(data);
+      } else {
+        throw Exception('Failed to load movie details');
+      }
+    } catch (e) {
+      throw Exception('Failed to load movie details: ${e.toString()}');
     }
   }
 
+  /// Searches for movies based on a query string
   Future<List<Movie>> searchMovies(String query) async {
     final searchUrl =
-        'https://api.themoviedb.org/3/search/movie?api_key=${Constants.apiKey}&query=$query';
-    final response = await http.get(Uri.parse(searchUrl));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<dynamic> results = data['results'];
-      return results.map((e) => Movie.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to search movies');
-    }
+        '$_baseUrl/search/movie?api_key=${Constants.apiKey}&query=$query';
+    return _getMovieList(searchUrl, 'Failed to search movies');
   }
 
+  /// Fetches movies similar to a specific movie
   Future<List<Movie>> getSimilarMovies(int id) async {
     final similarMoviesUrl =
-        'https://api.themoviedb.org/3/movie/$id/similar?api_key=${Constants.apiKey}';
-    final response = await http.get(Uri.parse(similarMoviesUrl));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<dynamic> results = data['results'];
-      return results.map((e) => Movie.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load similar movies');
-    }
+        '$_baseUrl/movie/$id/similar?api_key=${Constants.apiKey}';
+    return _getMovieList(similarMoviesUrl, 'Failed to load similar movies');
   }
 }

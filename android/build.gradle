@@ -8,9 +8,13 @@ allprojects {
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
     project.evaluationDependsOn(":app")
+    
+    project.configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            // Add all your dependency resolution logic here
+        }
+    }
 }
 
 tasks.register("clean", Delete) {
