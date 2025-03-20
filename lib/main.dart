@@ -42,46 +42,72 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => UpcomingMoviesBloc(api: api)),
         BlocProvider(create: (context) => SimilarMoviesBloc(api: api)),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'CineNook',
-        theme: ThemeData.light(useMaterial3: true),
-        darkTheme: ThemeData.dark(useMaterial3: true),
-        themeMode: ThemeMode.system,
-        home: BlocBuilder<AuthBloc, AuthState>(
-          builder: (context, state) {
-            if (state is AuthInitial || state is AuthLoading) {
-              return const SplashScreen();
-            } else if (state is Authenticated) {
-              return const HomeScreen();
-            } else {
-              return const LoginScreen();
-            }
-          },
-        ),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/home': (context) => const HomeScreen(),
-          '/details': (context) {
-            final args = ModalRoute.of(context)!.settings.arguments
-                as Map<String, dynamic>;
-            return DetailScreen(id: args['id']);
-          },
-        },
-        onGenerateRoute: (settings) {
-          // Handle dynamic detail routes with ID in the path
-          if (settings.name?.startsWith('/details/') == true) {
-            final id = int.tryParse(settings.name!.split('/').last);
-            if (id != null) {
-              return MaterialPageRoute(
-                settings: settings,
-                builder: (context) => DetailScreen(id: id),
+      child: BlocBuilder<AuthBloc, AuthState>(builder: (context, authState) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'CineNook',
+          theme: ThemeData.dark(useMaterial3: true),
+          themeMode: ThemeMode.system,
+          home: _buildHomeBasedOnAuthState(authState),
+          routes: {
+            '/login': (context) => const LoginScreen(),
+            '/details': (context) {
+              final args = ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>?;
+              return _checkAuth(
+                context,
+                DetailScreen(id: args?['id'] ?? 0),
               );
+            },
+          },
+          onGenerateRoute: (settings) {
+            // Handle dynamic detail routes with ID in the path
+            if (settings.name?.startsWith('/details/') == true) {
+              final id = int.tryParse(settings.name!.split('/').last);
+              if (id != null) {
+                return MaterialPageRoute(
+                  settings: settings,
+                  builder: (context) =>
+                      _checkAuth(context, DetailScreen(id: id)),
+                );
+              }
             }
-          }
-          return null;
-        },
-      ),
+            return null;
+          },
+        );
+      }),
     );
+  }
+
+  // Helper method to build the appropriate home screen based on authentication state
+  Widget _buildHomeBasedOnAuthState(AuthState state) {
+    if (state is AuthInitial || state is AuthLoading) {
+      return const SplashScreen();
+    } else if (state is Authenticated) {
+      return const HomeScreen();
+    } else {
+      return const LoginScreen();
+    }
+  }
+
+  // Auth protection helper - checks if user is authenticated
+  Widget _checkAuth(BuildContext context, Widget protectedScreen) {
+    final authState = context.watch<AuthBloc>().state;
+
+    if (authState is Authenticated) {
+      return protectedScreen;
+    } else {
+      // Redirect to login page with a slight delay to allow navigation
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pushReplacementNamed('/login');
+      });
+
+      // Return a loading widget while redirecting
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
   }
 }

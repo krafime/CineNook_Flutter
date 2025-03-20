@@ -1,7 +1,5 @@
-import 'package:cinenook/constants.dart';
 import 'package:cinenook/models/movie_response.dart';
-import 'package:cinenook/screens/detail_screen.dart';
-import 'package:cinenook/transitions/fade_transition.dart';
+import 'package:cinenook/widgets/common/movie_card.dart';
 import 'package:flutter/material.dart';
 
 class ListMovies extends StatefulWidget {
@@ -9,12 +7,12 @@ class ListMovies extends StatefulWidget {
     super.key,
     required this.snapshot,
     this.itemWidth = 140,
-    this.searchQuery, // added
+    this.searchQuery,
   });
 
   final AsyncSnapshot<List<Movie>> snapshot;
   final double itemWidth;
-  final String? searchQuery; // added
+  final String? searchQuery;
 
   @override
   State<ListMovies> createState() => _ListMoviesState();
@@ -45,85 +43,16 @@ class _ListMoviesState extends State<ListMovies> {
             itemCount: widget.snapshot.data!.length,
             itemBuilder: (context, index) {
               final movie = widget.snapshot.data![index];
-              return Padding(
+              return MovieCard(
+                movie: movie,
+                width: widget.itemWidth,
+                height: 200,
+                searchQuery: widget.searchQuery,
                 padding: const EdgeInsets.only(right: 8.0),
-                child: GestureDetector(
-                  onTap: () => _navigateToDetailScreen(movie.id),
-                  child: _buildMoviePoster(movie),
-                ),
               );
             },
           ),
         ),
-      ),
-    );
-  }
-
-  void _navigateToDetailScreen(int movieId) async {
-    // Get the current route name
-    final currentRoute = ModalRoute.of(context)?.settings.name;
-
-    // If we're already on a detail screen, replace the current screen
-    if (currentRoute == '/details' ||
-        currentRoute?.startsWith('/details/') == true) {
-      await Navigator.of(context).pushReplacement(
-        createFadeRoute(
-          DetailScreen(
-              id: movieId, searchQuery: widget.searchQuery), // modified
-        ),
-      );
-    } else {
-      // Normal navigation from home or other screens
-      await Navigator.of(context).push(
-        createFadeRoute(
-          DetailScreen(
-              id: movieId, searchQuery: widget.searchQuery), // modified
-        ),
-      );
-    }
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  Widget _buildMoviePoster(Movie movie) {
-    final imagePath = movie.posterPath != null
-        ? '${Constants.imagePath}${movie.posterPath}'
-        : null;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
-        height: 200,
-        width: widget.itemWidth,
-        child: imagePath != null
-            ? Image.network(
-                imagePath,
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.high,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      child,
-                      Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              )
-            : Image.asset(
-                'assets/placeholder.png',
-                fit: BoxFit.cover,
-              ),
       ),
     );
   }

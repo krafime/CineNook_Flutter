@@ -1,9 +1,11 @@
+import 'package:cinenook/auth/auth_guard_mixin.dart';
 import 'package:cinenook/blocs/movies/movies_bloc.dart';
 import 'package:cinenook/blocs/movies/movies_event.dart';
 import 'package:cinenook/blocs/movies/movies_state.dart';
 import 'package:cinenook/blocs/similar_movies/similar_movies_bloc.dart';
 import 'package:cinenook/blocs/similar_movies/similar_movies_event.dart';
 import 'package:cinenook/models/movie_details.dart';
+import 'package:cinenook/navigation/movie_navigation_handler.dart';
 import 'package:cinenook/widgets/movie_detail/movie_backdrop.dart';
 import 'package:cinenook/widgets/movie_detail/movie_details_section.dart';
 import 'package:cinenook/widgets/movie_detail/movie_header_info.dart';
@@ -15,17 +17,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class DetailScreen extends StatefulWidget {
   final int id;
-  final String? searchQuery; // Add searchQuery parameter
-  const DetailScreen({super.key, required this.id, this.searchQuery});
+  final bool fromDetailScreen;
+
+  const DetailScreen({
+    super.key,
+    required this.id,
+    this.fromDetailScreen = false,
+  });
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
 }
 
-class _DetailScreenState extends State<DetailScreen> {
+class _DetailScreenState extends State<DetailScreen> with AuthGuardMixin {
   @override
   void initState() {
-    super.initState();
+    super.initState(); // AuthGuardMixin will call checkAuthentication()
+
     // Request movie details via bloc
     context.read<MoviesBloc>().add(LoadMovieDetails(widget.id));
     // Load similar movies
@@ -34,8 +42,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Remove the navigation replacement that was clearing the stack
-    // We want to preserve the back stack so users can return to search results
+    // Use navigation replacement when coming from another detail screen
+    // This prevents building up a stack of detail screens
 
     return Scaffold(
       body: LayoutBuilder(builder: (context, constraints) {
@@ -335,11 +343,8 @@ class _DetailScreenState extends State<DetailScreen> {
         child: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
           onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              Navigator.of(context).pushReplacementNamed('/');
-            }
+            MovieNavigationHandler.goBack(context,
+                fromDetailScreen: widget.fromDetailScreen);
           },
           tooltip: 'Back to previous screen',
         ),

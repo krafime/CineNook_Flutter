@@ -1,0 +1,13 @@
+{
+  "name": "cinenook",
+  "version": "1.0.0",
+  "description": "CineNook Flutter Web App",
+  "scripts": {
+    "build": "flutter build web",
+    "inject-secrets": "node scripts/inject-secrets.js",
+    "deploy": "npm run build && npm run inject-secrets"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1"
+  }
+}

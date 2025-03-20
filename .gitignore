@@ -37,3 +37,15 @@ app.*.map
 
 # Ignore constants.dart file
 lib/constants.dart
+
+# Firebase configuration
+/web/firebase-config.js
+
+# Environment and configuration
+/web/env-config.js
+
+# Environment variables and secrets
+.env
+
+# Build scripts with secrets
+/scripts/secrets.js

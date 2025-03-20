@@ -34,35 +34,125 @@
       content="215921381040-srck5ql8s3d47b1p09epclrqghbp8pjd.apps.googleusercontent.com"
     />
 
+    <!-- Security Headers -->
+    <!-- 
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://www.gstatic.com 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:;"
+    />
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline'; font-src * data:;"
+    />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+    <meta
+      http-equiv="Strict-Transport-Security"
+      content="max-age=31536000; includeSubDomains"
+    />
+
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
     <title>CineNook</title>
     <link rel="manifest" href="manifest.json" />
   </head>
   <body>
+    <div id="flutter_target"></div>
     <script src="flutter_bootstrap.js" async></script>
+
+    <!-- PERUBAHAN: Gunakan pendekatan yang lebih aman untuk konfigurasi -->
+    <!-- Hapus referensi ke file konfigurasi statis -->
+    <!-- <script src="env-config.js"></script> -->
+    <!-- <script src="firebase-config.js"></script> -->
+
+    <!-- Muat konfigurasi secara dinamis dengan obfuscation -->
+    <script>
+      // Fungsi untuk men-decode config yang dienkripsi dengan penanganan error
+      function decodeConfig(encoded) {
+        // Cek apakah masih dalam bentuk placeholder
+        if (encoded === "__FIREBASE_CONFIG_PLACEHOLDER__" || encoded.startsWith("__")) {
+          console.warn("Running in development mode with local config");
+          // Dalam mode development, muat konfigurasi dari file lokal
+          return {
+            apiKey: "AIzaSyAtHCA3pJy7XIliLwKlvwmYqS7fZ90L9UY",
+            authDomain: "cinenook-flutter.firebaseapp.com",
+            projectId: "cinenook-flutter",
+            storageBucket: "cinenook-flutter.firebasestorage.app",
+            messagingSenderId: "215921381040",
+            appId: "1:215921381040:web:e46f695af5e2e7fbfbf575",
+            measurementId: "G-LXV5GBNDME"
+          };
+        }
+        
+        try {
+          return JSON.parse(atob(encoded));
+        } catch (e) {
+          console.error("Failed to decode configuration:", e);
+          // Fallback ke konfigurasi default untuk development
+          return {
+            apiKey: "AIzaSyAtHCA3pJy7XIliLwKlvwmYqS7fZ90L9UY",
+            authDomain: "cinenook-flutter.firebaseapp.com",
+            projectId: "cinenook-flutter",
+            storageBucket: "cinenook-flutter.firebasestorage.app",
+            messagingSenderId: "215921381040",
+            appId: "1:215921381040:web:e46f695af5e2e7fbfbf575",
+            measurementId: "G-LXV5GBNDME"
+          };
+        }
+      }
+
+      // Deteksi mode development
+      const isDevelopment = location.hostname === "localhost" || 
+                            location.hostname === "127.0.0.1";
+      
+      // Definisikan placeholder yang akan diganti saat build
+      window.firebaseConfig = decodeConfig("__FIREBASE_CONFIG_PLACEHOLDER__");
+      window.recaptchaKey = "__RECAPTCHA_KEY_PLACEHOLDER__" === "__RECAPTCHA_KEY_PLACEHOLDER__" 
+                          ? "6LdbZPoqAAAAAIfEN2FS13cY8QAYAvVhV3nWAF4W"  // fallback untuk development
+                          : "__RECAPTCHA_KEY_PLACEHOLDER__";
+      
+      // Log mode aplikasi
+      console.log(`Running in ${isDevelopment ? "development" : "production"} mode`);
+    </script>
+
     <script type="module">
       // Import the functions you need from the SDKs you need
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
       import { getAuth } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
-      // TODO: Add SDKs for Firebase products that you want to use
-      // https://firebase.google.com/docs/web/setup#available-libraries
+      import {
+        initializeAppCheck,
+        ReCaptchaV3Provider,
+      } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app-check.js";
 
-      // Your web app's Firebase configuration
-      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-      const firebaseConfig = {
-        apiKey: "AIzaSyAtHCA3pJy7XIliLwKlvwmYqS7fZ90L9UY",
-        authDomain: "cinenook-flutter.firebaseapp.com",
-        projectId: "cinenook-flutter",
-        storageBucket: "cinenook-flutter.firebasestorage.app",
-        messagingSenderId: "215921381040",
-        appId: "1:215921381040:web:e46f695af5e2e7fbfbf575",
-        measurementId: "G-LXV5GBNDME",
-      };
-
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
+      // Initialize Firebase - Dengan config yang dimuat secara dinamis
+      const app = initializeApp(window.firebaseConfig);
       const analytics = getAnalytics(app);
       const auth = getAuth(app);
+
+      // Force HTTPS in production
+      if (location.hostname !== "localhost" && location.protocol !== "https:") {
+        location.href =
+          "https:" +
+          window.location.href.substring(window.location.protocol.length);
+      }
+
+      // Simpan reCAPTCHA key dalam variabel environment
+      const recaptchaSiteKey =
+        window.recaptchaKey || "6LdbZPoqAAAAAIfEN2FS13cY8QAYAvVhV3nWAF4W";
+
+      // Tambahkan App Check untuk keamanan tambahan
+      const appCheck = initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(recaptchaSiteKey),
+        isTokenAutoRefreshEnabled: true,
+      });
     </script>
   </body>
 </html>

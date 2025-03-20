@@ -1,7 +1,5 @@
-import 'package:cinenook/constants.dart';
 import 'package:cinenook/models/movie_response.dart';
-import 'package:cinenook/screens/detail_screen.dart';
-import 'package:cinenook/transitions/fade_transition.dart';
+import 'package:cinenook/widgets/common/movie_card.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
@@ -49,7 +47,7 @@ class PopularMovies extends StatelessWidget {
               enlargeFactor: 0.3,
             ),
             itemBuilder: (context, itemIndex, pageViewIndex) {
-              return MoviePoster(
+              return MovieCard(
                 movie: snapshot.data![itemIndex],
                 height: height,
               );
@@ -57,64 +55,6 @@ class PopularMovies extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class MoviePoster extends StatelessWidget {
-  const MoviePoster({
-    super.key,
-    required this.movie,
-    required this.height,
-  });
-
-  final Movie movie;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          createFadeRoute(
-            DetailScreen(id: movie.id),
-          ),
-        );
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: AspectRatio(
-          aspectRatio: 2 / 3,
-          child: Image.network(
-            '${Constants.imagePath}${movie.posterPath}',
-            fit: BoxFit.cover,
-            filterQuality: FilterQuality.high,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  child,
-                  Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  ),
-                ],
-              );
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                color: Colors.grey[300],
-                child: const Icon(Icons.error, color: Colors.red),
-              );
-            },
-          ),
-        ),
-      ),
     );
   }
 }
