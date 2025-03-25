@@ -24,7 +24,7 @@ class MovieHeaderInfo extends StatelessWidget {
           movieDetail.title,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: compactMode ? 16 : 20,
+            fontSize: compactMode ? 16 : 32,
             fontWeight: FontWeight.bold,
           ),
           maxLines: 2,
@@ -45,7 +45,10 @@ class MovieHeaderInfo extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
             '${movieDetail.voteAverage.toStringAsFixed(2)}/10 (${movieDetail.voteCount})',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: compactMode ? 12 : 18,
+            )),
       ],
     );
   }
@@ -58,10 +61,13 @@ class MovieHeaderInfo extends StatelessWidget {
       children: movieDetail.genres
           .map((genre) => Chip(
                 padding: const EdgeInsets.symmetric(horizontal: -3),
-                label: Text(genre.name,
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 12)),
+                label: Text(
+                  genre.name,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: compactMode ? 10 : 16,
+                  ),
+                ),
                 backgroundColor: Colors.grey[800],
               ))
           .toList(),

@@ -46,7 +46,7 @@ class MovieDetailsSection extends StatelessWidget {
                 : 'No data',
             rightTitle: 'Popularity',
             rightValue: movieDetail.popularity > 0
-                ? movieDetail.popularity.toString()
+                ? movieDetail.popularity.toStringAsFixed(1)
                 : 'No data',
             isSmallScreen: isSmallScreen,
             isMediumScreen: isMediumScreen,

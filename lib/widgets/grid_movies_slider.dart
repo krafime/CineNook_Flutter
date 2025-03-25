@@ -1,5 +1,6 @@
 import 'package:cinenook/widgets/common/movie_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class GridMovies extends StatelessWidget {
   final AsyncSnapshot snapshot;
@@ -35,13 +36,12 @@ class GridMovies extends StatelessWidget {
     // Calculate dynamic height based on item count and screen dimensions
     final itemCount = movies.length;
     final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
 
-    // Use a more moderate height - 50% of screen height instead of 70%
-    final containerHeight = screenHeight; // Reduced from 0.7 to 0.5
+    // Use a more moderate height
+    final containerHeight = screenHeight;
 
     return SizedBox(
-      height: containerHeight, // More dynamic height
+      height: containerHeight,
       width: double.infinity,
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -49,34 +49,43 @@ class GridMovies extends StatelessWidget {
               ? crossAxisCount
               : _getCrossAxisCount(constraints.maxWidth);
 
-          // Calculate better aspect ratio based on screen dimensions
-          final aspectRatio = screenWidth > 600 ? 0.65 : 0.6;
-
-          return GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: actualCrossAxisCount,
-              crossAxisSpacing: 12, // Increased spacing
-              mainAxisSpacing: 12, // Increased spacing
-              childAspectRatio:
-                  aspectRatio, // Better aspect ratio for movie posters
-            ),
-            // Allow scrolling when content overflows
-            physics: const AlwaysScrollableScrollPhysics(),
+          return MasonryGridView.builder(
             itemCount: itemCount,
-            shrinkWrap: false, // Don't shrink wrap to allow full height
+            gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: actualCrossAxisCount,
+            ),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            physics: const AlwaysScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               if (index < 0 || index >= movies.length) {
                 return const SizedBox.shrink();
               }
+
               final movie = movies[index];
               if (movie == null) {
                 return const SizedBox.shrink();
               }
-              return MovieCard(
-                movie: movie,
-                showTitle: true,
-                searchQuery: searchQuery,
-              );
+
+              // Variasi tinggi poster untuk efek staggered
+              // Berdasarkan nilai tertentu dari film (misalnya rating atau ID)
+              final extraHeight = (movie.id ?? index) % 3 * 20.0;
+
+              return LayoutBuilder(builder: (context, constraints) {
+                // Dapatkan lebar maksimum yang tersedia untuk item
+                final itemWidth = constraints.maxWidth;
+                // Base height untuk poster film dengan aspek ratio poster film (2:3)
+                final baseHeight = itemWidth * 1.5;
+
+                return SizedBox(
+                  height: baseHeight + extraHeight,
+                  child: MovieCard(
+                    movie: movie,
+                    showTitle: true,
+                    searchQuery: searchQuery,
+                  ),
+                );
+              });
             },
           );
         },

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cinenook/blocs/auth/auth_bloc.dart';
 import 'package:cinenook/blocs/auth/auth_event.dart';
 import 'package:cinenook/blocs/auth/auth_state.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authState = context.read<AuthBloc>().state;
       if (authState is Authenticated) {
-        Navigator.of(context).pushReplacementNamed('/');
+        context.goNamed('home');
       }
     });
   }
@@ -136,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             Future.delayed(const Duration(seconds: 1), () {
               if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/');
+                context.goNamed('home');
               }
             });
           } else if (state is AuthError) {

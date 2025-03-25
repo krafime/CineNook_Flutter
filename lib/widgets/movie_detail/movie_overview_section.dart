@@ -26,26 +26,14 @@ class MovieOverviewSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            // Replace deprecated withOpacity with withValues
-            color: Theme.of(context).colorScheme.surface.withValues(
-                  alpha:
-                      150, // Replace withOpacity(0.6) with explicit alpha value
-                  // Keep the same hue, saturation and brightness
-                ),
+        Text(
+          overview.isEmpty ? 'No overview available.' : overview,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: fontSize,
+            height: 1.5,
           ),
-          child: Text(
-            overview.isEmpty ? 'No overview available.' : overview,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: fontSize,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.justify,
-          ),
+          textAlign: TextAlign.justify,
         ),
       ],
     );

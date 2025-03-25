@@ -95,4 +95,6 @@ class SpokenLanguage {
       name: json['english_name'] ?? json['name'] ?? '',
     );
   }
+
+  get iso_639_1 => null;
 }

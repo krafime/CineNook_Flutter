@@ -30,14 +30,35 @@ class DetailScreen extends StatefulWidget {
 }
 
 class _DetailScreenState extends State<DetailScreen> with AuthGuardMixin {
+  // Store the current movie ID to detect changes
+  late int _currentMovieId;
+
   @override
   void initState() {
     super.initState(); // AuthGuardMixin will call checkAuthentication()
+    _currentMovieId = widget.id;
 
-    // Request movie details via bloc
-    context.read<MoviesBloc>().add(LoadMovieDetails(widget.id));
+    // Request movie details and similar movies via bloc
+    _loadMovieData(_currentMovieId);
+  }
+
+  @override
+  void didUpdateWidget(DetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // If the ID changes (like when navigating from similar movie to another movie),
+    // reload the data
+    if (oldWidget.id != widget.id) {
+      _currentMovieId = widget.id;
+      _loadMovieData(_currentMovieId);
+    }
+  }
+
+  void _loadMovieData(int movieId) {
+    // Load movie details
+    context.read<MoviesBloc>().add(LoadMovieDetails(movieId));
     // Load similar movies
-    context.read<SimilarMoviesBloc>().add(LoadSimilarMovies(widget.id));
+    context.read<SimilarMoviesBloc>().add(LoadSimilarMovies(movieId));
   }
 
   @override
@@ -59,21 +80,8 @@ class _DetailScreenState extends State<DetailScreen> with AuthGuardMixin {
               current is MoviesError,
           builder: (context, state) {
             if (state is MoviesLoading) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Loading movie details...',
-                      style: TextStyle(
-                        fontSize:
-                            isSmallScreen ? 16 : (isMediumScreen ? 18 : 20),
-                      ),
-                    ),
-                  ],
-                ),
+              return const Center(
+                child: CircularProgressIndicator(),
               );
             } else if (state is MoviesError) {
               return Center(
@@ -95,15 +103,17 @@ class _DetailScreenState extends State<DetailScreen> with AuthGuardMixin {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      state.message,
-                      style: TextStyle(
-                        fontSize:
-                            isSmallScreen ? 14 : (isMediumScreen ? 16 : 18),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Text(
+                        state.message,
+                        style: TextStyle(
+                          fontSize:
+                              isSmallScreen ? 14 : (isMediumScreen ? 16 : 18),
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 24),
                   ],
                 ),
               );
