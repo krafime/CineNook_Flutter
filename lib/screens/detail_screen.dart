@@ -66,101 +66,111 @@ class _DetailScreenState extends State<DetailScreen> with AuthGuardMixin {
     // Use navigation replacement when coming from another detail screen
     // This prevents building up a stack of detail screens
 
-    return Scaffold(
-      body: LayoutBuilder(builder: (context, constraints) {
-        final screenWidth = constraints.maxWidth;
-        final isSmallScreen = screenWidth <= 600;
-        final isMediumScreen = screenWidth > 600 && screenWidth <= 900;
-        final isLargeScreen = screenWidth > 900;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          MovieNavigationHandler.goBack(context,
+              fromDetailScreen: widget.fromDetailScreen);
+        }
+      },
+      child: Scaffold(
+        body: LayoutBuilder(builder: (context, constraints) {
+          final screenWidth = constraints.maxWidth;
+          final isSmallScreen = screenWidth <= 600;
+          final isMediumScreen = screenWidth > 600 && screenWidth <= 900;
+          final isLargeScreen = screenWidth > 900;
 
-        return BlocBuilder<MoviesBloc, MoviesState>(
-          buildWhen: (previous, current) =>
-              current is MoviesLoading ||
-              current is MovieDetailsLoaded ||
-              current is MoviesError,
-          builder: (context, state) {
-            if (state is MoviesLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            } else if (state is MoviesError) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: isSmallScreen ? 40 : (isMediumScreen ? 60 : 80),
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error loading movie details',
-                      style: TextStyle(
-                        fontSize:
-                            isSmallScreen ? 18 : (isMediumScreen ? 20 : 22),
-                        fontWeight: FontWeight.bold,
+          return BlocBuilder<MoviesBloc, MoviesState>(
+            buildWhen: (previous, current) =>
+                current is MoviesLoading ||
+                current is MovieDetailsLoaded ||
+                current is MoviesError,
+            builder: (context, state) {
+              if (state is MoviesLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else if (state is MoviesError) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: isSmallScreen ? 40 : (isMediumScreen ? 60 : 80),
+                        color: Colors.red,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Text(
-                        state.message,
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading movie details',
                         style: TextStyle(
                           fontSize:
-                              isSmallScreen ? 14 : (isMediumScreen ? 16 : 18),
+                              isSmallScreen ? 18 : (isMediumScreen ? 20 : 22),
+                          fontWeight: FontWeight.bold,
                         ),
-                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  ],
-                ),
-              );
-            } else if (state is MovieDetailsLoaded) {
-              final movieDetail = state.movie;
-              return Center(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: isLargeScreen ? 1400 : double.infinity,
-                  ),
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      _buildSliverAppBar(context, movieDetail, constraints),
-                      SliverToBoxAdapter(
-                        child: Center(
-                          child: Container(
-                            constraints: BoxConstraints(
-                              maxWidth: isLargeScreen ? 1200 : double.infinity,
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isSmallScreen
-                                  ? 16
-                                  : (isMediumScreen ? 24 : 32),
-                              vertical: isSmallScreen
-                                  ? 16
-                                  : (isMediumScreen ? 24 : 32),
-                            ),
-                            child: isLargeScreen
-                                ? _buildWideLayout(movieDetail, constraints)
-                                : (isMediumScreen
-                                    ? _buildMediumLayout(
-                                        movieDetail, constraints)
-                                    : _buildMovieDetails(movieDetail)),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Text(
+                          state.message,
+                          style: TextStyle(
+                            fontSize:
+                                isSmallScreen ? 14 : (isMediumScreen ? 16 : 18),
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ],
                   ),
-                ),
-              );
-            } else {
-              return const Center(child: Text('No data found'));
-            }
-          },
-        );
-      }),
+                );
+              } else if (state is MovieDetailsLoaded) {
+                final movieDetail = state.movie;
+                return Center(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: isLargeScreen ? 1400 : double.infinity,
+                    ),
+                    child: CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        _buildSliverAppBar(context, movieDetail, constraints),
+                        SliverToBoxAdapter(
+                          child: Center(
+                            child: Container(
+                              constraints: BoxConstraints(
+                                maxWidth:
+                                    isLargeScreen ? 1200 : double.infinity,
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen
+                                    ? 16
+                                    : (isMediumScreen ? 24 : 32),
+                                vertical: isSmallScreen
+                                    ? 16
+                                    : (isMediumScreen ? 24 : 32),
+                              ),
+                              child: isLargeScreen
+                                  ? _buildWideLayout(movieDetail, constraints)
+                                  : (isMediumScreen
+                                      ? _buildMediumLayout(
+                                          movieDetail, constraints)
+                                      : _buildMovieDetails(movieDetail)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              } else {
+                return const Center(child: Text('No data found'));
+              }
+            },
+          );
+        }),
+      ),
     );
   }
 

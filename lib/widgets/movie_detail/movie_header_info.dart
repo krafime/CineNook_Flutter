@@ -24,7 +24,7 @@ class MovieHeaderInfo extends StatelessWidget {
           movieDetail.title,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: compactMode ? 16 : 32,
+            fontSize: compactMode ? 18 : 32,
             fontWeight: FontWeight.bold,
           ),
           maxLines: 2,
@@ -60,7 +60,7 @@ class MovieHeaderInfo extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       children: movieDetail.genres
           .map((genre) => Chip(
-                padding: const EdgeInsets.symmetric(horizontal: -3),
+                padding: const EdgeInsets.symmetric(horizontal: -2),
                 label: Text(
                   genre.name,
                   style: TextStyle(
@@ -69,6 +69,12 @@ class MovieHeaderInfo extends StatelessWidget {
                   ),
                 ),
                 backgroundColor: Colors.grey[800],
+                shape: StadiumBorder(
+                  side: BorderSide(
+                    width: 1,
+                    color: Colors.white.withAlpha(30),
+                  ),
+                ),
               ))
           .toList(),
     );

@@ -61,19 +61,19 @@ class AppRouter {
       final isSplash = state.matchedLocation == '/splash';
       final isGoingToLogin = state.matchedLocation == '/login';
 
-      // If the user is not logged in and not headed to login or splash, redirect to login
-      if (!isLoggedIn && !isGoingToLogin && !isSplash) {
+      // Allow navigating to splash screen regardless of auth state
+      if (isSplash) {
+        return null;
+      }
+
+      // If the user is not logged in and not headed to login, redirect to login
+      if (!isLoggedIn && !isGoingToLogin) {
         return '/login';
       }
 
       // If user is logged in and headed to login, redirect to home
       if (isLoggedIn && isGoingToLogin) {
         return '/';
-      }
-
-      // If user is on splash and the auth state is determined, redirect accordingly
-      if (isSplash && authState is! AuthInitial && authState is! AuthLoading) {
-        return isLoggedIn ? '/' : '/login';
       }
 
       return null;
