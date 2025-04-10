@@ -1,11 +1,9 @@
-import 'package:cinenook/blocs/similar_movies/similar_movies_bloc.dart';
-import 'package:cinenook/blocs/similar_movies/similar_movies_state.dart';
-import 'package:cinenook/blocs/similar_movies/similar_movies_event.dart';
+import 'package:cinenook/controllers/movie_controller.dart';
 import 'package:cinenook/widgets/list_movies_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 
-class RelatedMoviesSection extends StatelessWidget {
+class RelatedMoviesSection extends StatefulWidget {
   final int movieId;
   final String title;
   final double titleSize;
@@ -14,67 +12,101 @@ class RelatedMoviesSection extends StatelessWidget {
     super.key,
     required this.movieId,
     this.title = 'Similar Movies',
-    this.titleSize = 20,
+    this.titleSize = 14,
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Trigger loading of similar movies when the widget is built
-    // This ensures fresh data each time the movie changes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SimilarMoviesBloc>().add(LoadSimilarMovies(movieId));
-    });
+  State<RelatedMoviesSection> createState() => _RelatedMoviesSectionState();
+}
 
+class _RelatedMoviesSectionState extends State<RelatedMoviesSection> {
+  // Get movie controller instance
+  final MovieController movieController = Get.find<MovieController>();
+  // Track the last movie ID to prevent repeated refreshes
+  int? _lastLoadedMovieId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMoviesIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(RelatedMoviesSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only reload if the movie ID changes
+    if (oldWidget.movieId != widget.movieId) {
+      _loadMoviesIfNeeded();
+    }
+  }
+
+  void _loadMoviesIfNeeded() {
+    // Only load similar movies if we haven't loaded them before
+    // or if we're showing a different movie now
+    if (_lastLoadedMovieId != widget.movieId) {
+      _lastLoadedMovieId = widget.movieId;
+
+      // Check if we need to load similar movies
+      if (movieController.similarMovies.isEmpty ||
+          movieController.movieDetail.value?.id != widget.movieId) {
+        // Wait until the next frame to avoid build-time issues
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            movieController.getSimilarMovies(widget.movieId);
+          }
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          title,
+          widget.title,
           style: TextStyle(
-            fontSize: titleSize,
+            fontSize: widget.titleSize,
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 8),
-        BlocBuilder<SimilarMoviesBloc, SimilarMoviesState>(
-          builder: (context, state) {
-            if (state is SimilarMoviesLoading) {
-              return const SizedBox(
-                height: 200,
-                child: Center(child: CircularProgressIndicator()),
-              );
-            } else if (state is SimilarMoviesError) {
-              return SizedBox(
-                height: 100,
-                child: Center(child: Text('Error: ${state.message}')),
-              );
-            } else if (state is SimilarMoviesLoaded) {
-              if (state.movies.isEmpty) {
-                return const SizedBox(
-                  height: 100,
-                  child: Center(child: Text('No similar movies found')),
-                );
-              }
+        Obx(() {
+          // Check if we're loading similar movies for THIS specific movie
+          final bool isCurrentlyLoadingThis =
+              movieController.isLoadingSimilar.value &&
+                  _lastLoadedMovieId == widget.movieId;
 
-              // Create snapshot for ListMovies widget
-              final snapshot = AsyncSnapshot.withData(
-                ConnectionState.done,
-                state.movies,
-              );
-
-              return ListMovies(
-                snapshot: snapshot,
-                itemWidth: 140,
-              );
-            }
-
-            // Initial state
+          if (isCurrentlyLoadingThis) {
             return const SizedBox(
               height: 200,
               child: Center(child: CircularProgressIndicator()),
             );
-          },
-        ),
+          } else if (movieController.errorMessage.isNotEmpty) {
+            return SizedBox(
+              height: 100,
+              child: Center(
+                  child: Text('Error: ${movieController.errorMessage.value}')),
+            );
+          } else if (movieController.similarMovies.isNotEmpty) {
+            // Create snapshot for ListMovies widget
+            final snapshot = AsyncSnapshot.withData(
+              ConnectionState.done,
+              movieController.similarMovies,
+            );
+
+            return ListMovies(
+              snapshot: snapshot,
+              itemWidth: 140,
+            );
+          } else {
+            return const SizedBox(
+              height: 100,
+              child: Center(child: Text('No similar movies found')),
+            );
+          }
+        }),
       ],
     );
   }

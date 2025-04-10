@@ -13,7 +13,7 @@ class MovieBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     return backdropPath.isNotEmpty
         ? Image.network(
-            '${Constants.imagePath}$backdropPath',
+            '${Constants.imageBackdropPath}$backdropPath',
             fit: BoxFit.cover,
             filterQuality: FilterQuality.high,
             loadingBuilder: (context, child, loadingProgress) {

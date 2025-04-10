@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cinenook/blocs/popular_movies/popular_movies_bloc.dart'
-    as popular;
-import 'package:cinenook/blocs/now_playing_movies/now_playing_movies_bloc.dart'
-    as now_playing;
-import 'package:cinenook/blocs/upcoming_movies/upcoming_movies_bloc.dart'
-    as upcoming;
+import 'package:cinenook/controllers/movie_controller.dart';
 import 'package:cinenook/widgets/popular_movies_slider.dart';
 import 'package:cinenook/widgets/list_movies_slider.dart';
 
@@ -15,19 +10,28 @@ class MovieSections extends StatelessWidget {
 
   const MovieSections({super.key, required this.screenWidth});
 
+  // Use GetX controller instead of BLoC
+  MovieController get movieController => Get.find<MovieController>();
+
   Widget _buildPopularMoviesSection() {
     final isLargeScreen = screenWidth > 900;
     final isMediumScreen = screenWidth > 600 && screenWidth <= 900;
+    final isVerySmallScreen =
+        screenWidth < 400; // Tambahkan pengecekan untuk layar sangat kecil
 
     return Container(
-      padding: EdgeInsets.all(isLargeScreen ? 24 : (isMediumScreen ? 16 : 12)),
+      padding: EdgeInsets.all(isVerySmallScreen
+          ? 8
+          : (isLargeScreen ? 24 : (isMediumScreen ? 16 : 12))),
       margin: EdgeInsets.symmetric(
-          vertical: isLargeScreen ? 24 : (isMediumScreen ? 16 : 12)),
+          vertical: isVerySmallScreen
+              ? 8
+              : (isLargeScreen ? 24 : (isMediumScreen ? 16 : 12))),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           colors: [
-            Colors.red.withValues(red: 255, green: 0, blue: 0, alpha: 0.2),
+            Colors.black.withAlpha(76),
             Colors.transparent,
           ],
           begin: Alignment.topLeft,
@@ -57,23 +61,22 @@ class MovieSections extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: isLargeScreen ? 400 : (isMediumScreen ? 350 : 300),
-            child: BlocBuilder<popular.PopularMoviesBloc,
-                popular.PopularMoviesState>(
-              builder: (context, state) {
-                if (state is popular.PopularMoviesLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (state is popular.PopularMoviesLoaded) {
-                  return PopularMovies(
-                    snapshot: AsyncSnapshot.withData(
-                        ConnectionState.done, state.movies),
-                  );
-                } else if (state is popular.PopularMoviesError) {
-                  return Center(child: Text(state.message));
-                }
-                return const SizedBox(height: 200);
-              },
-            ),
+            height: isVerySmallScreen
+                ? 240
+                : (isLargeScreen ? 400 : (isMediumScreen ? 350 : 300)),
+            child: Obx(() {
+              if (movieController.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (movieController.popularMovies.isNotEmpty) {
+                return PopularMovies(
+                  snapshot: AsyncSnapshot.withData(
+                      ConnectionState.done, movieController.popularMovies),
+                );
+              } else if (movieController.errorMessage.isNotEmpty) {
+                return Center(child: Text(movieController.errorMessage.value));
+              }
+              return const SizedBox(height: 200);
+            }),
           ),
         ],
       ),
@@ -83,16 +86,22 @@ class MovieSections extends StatelessWidget {
   Widget _buildNowPlayingMoviesSection() {
     final isLargeScreen = screenWidth > 900;
     final isMediumScreen = screenWidth > 600 && screenWidth <= 900;
+    final isVerySmallScreen =
+        screenWidth < 400; // Tambahkan pengecekan untuk layar sangat kecil
 
     return Container(
-      padding: EdgeInsets.all(isLargeScreen ? 24 : (isMediumScreen ? 16 : 12)),
+      padding: EdgeInsets.all(isVerySmallScreen
+          ? 8
+          : (isLargeScreen ? 24 : (isMediumScreen ? 16 : 12))),
       margin: EdgeInsets.symmetric(
-          vertical: isLargeScreen ? 24 : (isMediumScreen ? 16 : 12)),
+          vertical: isVerySmallScreen
+              ? 8
+              : (isLargeScreen ? 24 : (isMediumScreen ? 16 : 12))),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           colors: [
-            Colors.blue.withValues(red: 0, green: 0, blue: 255, alpha: 0.2),
+            Colors.black.withAlpha(76),
             Colors.transparent,
           ],
           begin: Alignment.topLeft,
@@ -122,25 +131,23 @@ class MovieSections extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: isLargeScreen ? 240 : (isMediumScreen ? 220 : 200),
-            child: BlocBuilder<now_playing.NowPlayingMoviesBloc,
-                now_playing.NowPlayingMoviesState>(
-              builder: (context, state) {
-                if (state is now_playing.NowPlayingMoviesLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (state is now_playing.NowPlayingMoviesLoaded) {
-                  return ListMovies(
-                    snapshot: AsyncSnapshot.withData(
-                        ConnectionState.done, state.movies),
-                    itemWidth:
-                        isLargeScreen ? 160 : (isMediumScreen ? 140 : 120),
-                  );
-                } else if (state is now_playing.NowPlayingMoviesError) {
-                  return Center(child: Text(state.message));
-                }
-                return const SizedBox(height: 200);
-              },
-            ),
+            height: isVerySmallScreen
+                ? 160
+                : (isLargeScreen ? 240 : (isMediumScreen ? 220 : 200)),
+            child: Obx(() {
+              if (movieController.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (movieController.nowPlayingMovies.isNotEmpty) {
+                return ListMovies(
+                  snapshot: AsyncSnapshot.withData(
+                      ConnectionState.done, movieController.nowPlayingMovies),
+                  itemWidth: isLargeScreen ? 160 : (isMediumScreen ? 140 : 120),
+                );
+              } else if (movieController.errorMessage.isNotEmpty) {
+                return Center(child: Text(movieController.errorMessage.value));
+              }
+              return const SizedBox(height: 200);
+            }),
           ),
         ],
       ),
@@ -150,14 +157,18 @@ class MovieSections extends StatelessWidget {
   Widget _buildUpcomingMoviesSection() {
     final isLargeScreen = screenWidth > 900;
     final isMediumScreen = screenWidth > 600 && screenWidth <= 900;
+    final isVerySmallScreen =
+        screenWidth < 400; // Tambahkan pengecekan untuk layar sangat kecil
 
     return Container(
-      padding: EdgeInsets.all(isLargeScreen ? 24 : (isMediumScreen ? 16 : 12)),
+      padding: EdgeInsets.all(isVerySmallScreen
+          ? 8
+          : (isLargeScreen ? 24 : (isMediumScreen ? 16 : 12))),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           colors: [
-            Colors.green.withValues(red: 0, green: 255, blue: 0, alpha: 0.2),
+            Colors.black.withAlpha(76),
             Colors.transparent,
           ],
           begin: Alignment.topLeft,
@@ -187,25 +198,23 @@ class MovieSections extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: isLargeScreen ? 240 : (isMediumScreen ? 220 : 200),
-            child: BlocBuilder<upcoming.UpcomingMoviesBloc,
-                upcoming.UpcomingMoviesState>(
-              builder: (context, state) {
-                if (state is upcoming.UpcomingMoviesLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (state is upcoming.UpcomingMoviesLoaded) {
-                  return ListMovies(
-                    snapshot: AsyncSnapshot.withData(
-                        ConnectionState.done, state.movies),
-                    itemWidth:
-                        isLargeScreen ? 160 : (isMediumScreen ? 140 : 120),
-                  );
-                } else if (state is upcoming.UpcomingMoviesError) {
-                  return Center(child: Text(state.message));
-                }
-                return const SizedBox(height: 200);
-              },
-            ),
+            height: isVerySmallScreen
+                ? 160
+                : (isLargeScreen ? 240 : (isMediumScreen ? 220 : 200)),
+            child: Obx(() {
+              if (movieController.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (movieController.upcomingMovies.isNotEmpty) {
+                return ListMovies(
+                  snapshot: AsyncSnapshot.withData(
+                      ConnectionState.done, movieController.upcomingMovies),
+                  itemWidth: isLargeScreen ? 160 : (isMediumScreen ? 140 : 120),
+                );
+              } else if (movieController.errorMessage.isNotEmpty) {
+                return Center(child: Text(movieController.errorMessage.value));
+              }
+              return const SizedBox(height: 200);
+            }),
           ),
         ],
       ),
@@ -253,6 +262,23 @@ class MovieSections extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Initialize data loading when the widget is built
+    _initData();
     return buildHomeContent();
+  }
+
+  void _initData() {
+    // Load all movie data if not already loaded
+    if (movieController.popularMovies.isEmpty) {
+      movieController.getPopularMovies();
+    }
+
+    if (movieController.nowPlayingMovies.isEmpty) {
+      movieController.getNowPlayingMovies();
+    }
+
+    if (movieController.upcomingMovies.isEmpty) {
+      movieController.getUpcomingMovies();
+    }
   }
 }

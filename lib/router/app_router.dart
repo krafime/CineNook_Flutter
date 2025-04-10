@@ -1,105 +1,122 @@
-import 'dart:async'; // Add this import for StreamSubscription
-import 'package:cinenook/blocs/auth/auth_bloc.dart';
-import 'package:cinenook/blocs/auth/auth_state.dart';
+import 'package:cinenook/controllers/auth_controller.dart';
 import 'package:cinenook/screens/detail_screen.dart';
 import 'package:cinenook/screens/home_screen.dart';
 import 'package:cinenook/screens/login_screen.dart';
 import 'package:cinenook/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
-  final AuthBloc authBloc;
+  final AuthController authController;
 
-  AppRouter(this.authBloc);
+  AppRouter(this.authController);
 
-  late final GoRouter router = GoRouter(
-    initialLocation: '/splash',
-    debugLogDiagnostics: true,
-    refreshListenable: GoRouterRefreshStream(authBloc.stream),
-    routes: [
-      GoRoute(
-        path: '/splash',
-        name: 'splash',
-        builder: (context, state) => const SplashScreen(),
-      ),
-      GoRoute(
-        path: '/login',
-        name: 'login',
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/',
-        name: 'home',
-        builder: (context, state) => const HomeScreen(),
-        redirect: (context, state) => _checkAuth(context, state),
-      ),
-      GoRoute(
-        path: '/details/:id',
-        name: 'details',
-        builder: (context, state) {
-          // Parse the ID safely with better error handling
-          final idParam = state.pathParameters['id'];
-          final id = int.tryParse(idParam ?? '0') ?? 0;
+  late final GoRouter router = _createRouter();
 
-          // Log navigation to help debug
-          debugPrint('Navigating to movie details: $id');
+  GoRouter _createRouter() {
+    return GoRouter(
+      initialLocation: '/splash',
+      debugLogDiagnostics: true,
+      refreshListenable: GetXRouterRefreshStream(authController),
+      routes: [
+        GoRoute(
+          path: '/splash',
+          name: 'splash',
+          builder: (context, state) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: '/login',
+          name: 'login',
+          builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: '/',
+          name: 'home',
+          builder: (context, state) => const HomeScreen(),
+          redirect: (context, state) => _checkAuth(context, state),
+        ),
+        GoRoute(
+          path: '/details/:id',
+          name: 'details',
+          builder: (context, state) {
+            // Parse the ID safely with better error handling
+            final idParam = state.pathParameters['id'];
+            final id = int.tryParse(idParam ?? '0') ?? 0;
 
-          // Create the detail screen with a unique key based on the movie id
-          // This ensures Flutter creates a new widget when id changes
-          return DetailScreen(
-            key: ValueKey('detail_screen_$id'),
-            id: id,
-          );
-        },
-        redirect: (context, state) => _checkAuth(context, state),
-      ),
-    ],
-    redirect: (context, state) {
-      final authState = authBloc.state;
-      final isLoggedIn = authState is Authenticated;
-      final isSplash = state.matchedLocation == '/splash';
-      final isGoingToLogin = state.matchedLocation == '/login';
+            // Log navigation to help debug
+            debugPrint('Navigating to movie details: $id');
 
-      // Allow navigating to splash screen regardless of auth state
-      if (isSplash) {
+            // Create the detail screen with a unique key based on the movie id
+            // This ensures Flutter creates a new widget when id changes
+            return DetailScreen(
+              key: ValueKey('detail_screen_$id'),
+              id: id,
+            );
+          },
+          redirect: (context, state) => _checkAuth(context, state),
+        ),
+      ],
+      // Use a non-reactive approach for redirects
+      redirect: (context, state) {
+        // Use static values for redirection to avoid triggering rebuilds during build
+        final loggedIn = authController.isLoggedIn;
+        final loggingIn = state.matchedLocation == '/login';
+        final splashing = state.matchedLocation == '/splash';
+
+        // Don't redirect away from splash screen initially
+        if (splashing) return null;
+
+        // If not logged in and not heading to login, redirect to login
+        if (!loggedIn && !loggingIn) return '/login';
+
+        // If logged in and heading to login, redirect to home
+        if (loggedIn && loggingIn) return '/';
+
+        // No redirection needed
         return null;
-      }
-
-      // If the user is not logged in and not headed to login, redirect to login
-      if (!isLoggedIn && !isGoingToLogin) {
-        return '/login';
-      }
-
-      // If user is logged in and headed to login, redirect to home
-      if (isLoggedIn && isGoingToLogin) {
-        return '/';
-      }
-
-      return null;
-    },
-  );
+      },
+      // Add error builder
+      errorBuilder: (context, state) => const Scaffold(
+        body: Center(
+          child: Text('Page not found'),
+        ),
+      ),
+    );
+  }
 
   String? _checkAuth(BuildContext context, GoRouterState state) {
-    final authState = authBloc.state;
-    if (authState is! Authenticated) {
+    final isLoggedIn = authController.isLoggedIn;
+    if (!isLoggedIn) {
       return '/login';
     }
     return null;
   }
 }
 
-// Helper class to convert BLoC stream to Listenable for GoRouter
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    _subscription = stream.listen((_) => notifyListeners());
-  }
+// Helper class to convert GetX controller to Listenable for GoRouter
+class GetXRouterRefreshStream extends ChangeNotifier {
+  final AuthController controller;
+  late Worker _worker;
+  bool _isNotifying = false;
 
-  late final StreamSubscription<dynamic> _subscription;
+  GetXRouterRefreshStream(this.controller) {
+    // Listen for changes to the currentUser and notify router to refresh
+    _worker = ever(controller.currentUser, (_) {
+      // Use a microtask to avoid rebuilding during build cycle
+      if (!_isNotifying) {
+        _isNotifying = true;
+        Future.microtask(() {
+          notifyListeners();
+          _isNotifying = false;
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
-    _subscription.cancel();
+    _worker.dispose();
     super.dispose();
   }
 }

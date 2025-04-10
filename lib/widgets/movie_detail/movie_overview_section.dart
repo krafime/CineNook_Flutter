@@ -8,8 +8,8 @@ class MovieOverviewSection extends StatelessWidget {
   const MovieOverviewSection({
     super.key,
     required this.overview,
-    this.fontSize = 16.0,
-    this.titleSize = 20.0,
+    this.fontSize = 12.0,
+    this.titleSize = 14.0,
   });
 
   @override

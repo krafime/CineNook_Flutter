@@ -50,6 +50,7 @@ class PopularMovies extends StatelessWidget {
               return MovieCard(
                 movie: snapshot.data![itemIndex],
                 height: height,
+                rank: itemIndex + 1, // Pass the rank (starting from 1)
               );
             },
           ),

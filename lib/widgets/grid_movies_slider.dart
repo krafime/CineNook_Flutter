@@ -37,8 +37,8 @@ class GridMovies extends StatelessWidget {
     final itemCount = movies.length;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Use a more moderate height
-    final containerHeight = screenHeight;
+    // Hitung height yang lebih masuk akal - jangan gunakan seluruh screenHeight
+    final containerHeight = screenHeight * 0.7; // Gunakan sebagian layar saja
 
     return SizedBox(
       height: containerHeight,
@@ -49,13 +49,16 @@ class GridMovies extends StatelessWidget {
               ? crossAxisCount
               : _getCrossAxisCount(constraints.maxWidth);
 
+          // Pastikan spacing lebih kecil untuk layar kecil
+          final spacing = constraints.maxWidth < 400 ? 8.0 : 12.0;
+
           return MasonryGridView.builder(
             itemCount: itemCount,
             gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: actualCrossAxisCount,
             ),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
+            mainAxisSpacing: spacing,
+            crossAxisSpacing: spacing,
             physics: const AlwaysScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               if (index < 0 || index >= movies.length) {
@@ -93,7 +96,9 @@ class GridMovies extends StatelessWidget {
     );
   }
 
+  // Tambahkan lebih banyak breakpoint untuk layar kecil
   int _getCrossAxisCount(double maxWidth) {
+    if (maxWidth <= 320) return 1; // Layar sangat kecil
     if (maxWidth <= 600) return 2;
     if (maxWidth <= 1200) return 4;
     return 6;

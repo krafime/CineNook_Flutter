@@ -12,6 +12,7 @@ class MovieCard extends StatelessWidget {
   final double aspectRatio;
   final EdgeInsets padding;
   final BorderRadius borderRadius;
+  final int? rank; // Add rank parameter
 
   const MovieCard({
     super.key,
@@ -23,6 +24,7 @@ class MovieCard extends StatelessWidget {
     this.aspectRatio = 2 / 3,
     this.padding = EdgeInsets.zero,
     this.borderRadius = const BorderRadius.all(Radius.circular(10)),
+    this.rank, // Add rank parameter to constructor
   });
 
   @override
@@ -43,52 +45,112 @@ class MovieCard extends StatelessWidget {
   }
 
   Widget _buildPoster() {
-    return AspectRatio(
-      aspectRatio: aspectRatio,
-      child: NetworkImageWithLoading(
-        imagePath: movie.posterPath,
-        borderRadius: borderRadius,
-        width: width,
-        height: height,
+    return Stack(
+      children: [
+        AspectRatio(
+          aspectRatio: aspectRatio,
+          child: NetworkImageWithLoading(
+            imagePath: movie.posterPath,
+            borderRadius: borderRadius,
+            width: width,
+            height: height,
+          ),
+        ),
+        // Add rank badge if rank is provided
+        if (rank != null) _buildRankBadge(),
+      ],
+    );
+  }
+
+  Widget _buildRankBadge() {
+    // Choose badge color based on rank
+    Color badgeColor;
+
+    switch (rank) {
+      case 1:
+        badgeColor = const Color(0xFEFBF040); // Gold
+        break;
+      case 2:
+        badgeColor = const Color(0xFFC0C0C0); // Silver
+        break;
+      case 3:
+        badgeColor = const Color(0xFFCD7F32); // Bronze
+        break;
+      default:
+        badgeColor = Colors.grey.withAlpha(80);
+    }
+
+    return Positioned(
+      left: 8,
+      top: 8,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: badgeColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(30),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            '$rank',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildCardWithTitle(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.inversePrimary,
-      elevation: 4,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: borderRadius,
-              child: AspectRatio(
-                aspectRatio: aspectRatio,
-                child: NetworkImageWithLoading(
-                  imagePath: movie.posterPath,
+    return Stack(
+      children: [
+        Card(
+          color: Theme.of(context).colorScheme.inversePrimary,
+          elevation: 4,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: borderRadius,
+                  child: AspectRatio(
+                    aspectRatio: aspectRatio,
+                    child: NetworkImageWithLoading(
+                      imagePath: movie.posterPath,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              movie.title ??
-                  'Untitled Movie', // Fixed: Add null check with fallback
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  movie.title ?? 'Untitled Movie',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+        // Add rank badge if rank is provided
+        if (rank != null) _buildRankBadge(),
+      ],
     );
   }
 }

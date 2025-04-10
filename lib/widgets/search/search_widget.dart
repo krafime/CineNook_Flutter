@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cinenook/blocs/movies/movies_bloc.dart';
-import 'package:cinenook/blocs/movies/movies_state.dart';
+import 'package:cinenook/controllers/movie_controller.dart';
 import 'package:cinenook/widgets/grid_movies_slider.dart';
 
 class SearchWidget extends StatelessWidget {
@@ -21,6 +20,9 @@ class SearchWidget extends StatelessWidget {
     required this.screenWidth,
   });
 
+  // Use GetX controller
+  MovieController get movieController => Get.find<MovieController>();
+
   @override
   Widget build(BuildContext context) {
     final isLargeScreen = screenWidth > 900;
@@ -34,79 +36,72 @@ class SearchWidget extends StatelessWidget {
       constraints: BoxConstraints(
         minHeight: minContentHeight,
       ),
-      child: BlocBuilder<MoviesBloc, MoviesState>(
-        builder: (context, state) {
-          // Loading state
-          if (state is MoviesLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          // Results loaded state
-          else if (state is SearchResultsLoaded) {
-            // Handle empty results
-            if (state.movies.isEmpty) {
-              return _buildEmptyState(context, isLargeScreen, isMediumScreen);
-            }
-
-            // Results found - show grid
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Search Results',
-                  style: GoogleFonts.poppins(
-                    fontSize: isLargeScreen ? 28 : (isMediumScreen ? 24 : 20),
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Fix: Wrap GridMovies in a container with defined constraints
-                Container(
-                  constraints: BoxConstraints(
-                    // Set minimum height but allow it to grow
-                    minHeight: 200,
-                  ),
-                  child: GridMovies(
-                    snapshot: AsyncSnapshot.withData(
-                      ConnectionState.done,
-                      state.movies, // Add null check
-                    ),
-                    crossAxisCount:
-                        isLargeScreen ? 5 : (isMediumScreen ? 3 : 2),
-                    searchQuery: lastSearchQuery ?? "",
-                  ),
-                ),
-              ],
-            );
-          }
-          // Error state
-          else if (state is MoviesError) {
-            return _buildErrorState(
-                context, state.message, isLargeScreen, isMediumScreen);
-          }
-
-          // Default state - show placeholder with proper height
-          return SizedBox(
-            width: double.infinity,
-            height: minContentHeight,
-            child: Center(
-              child: Text(
-                'Search for movies',
-                style: TextStyle(
-                  fontSize: isLargeScreen ? 22 : (isMediumScreen ? 20 : 18),
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.5),
+      child: Obx(() {
+        // Loading state
+        if (movieController.isLoading.value) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        // Results loaded state
+        else if (movieController.searchResults.isNotEmpty) {
+          // Results found - show grid
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Search Results',
+                style: GoogleFonts.poppins(
+                  fontSize: isLargeScreen ? 28 : (isMediumScreen ? 24 : 20),
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-            ),
+              const SizedBox(height: 16),
+              // Fix: Wrap GridMovies in a container with defined constraints
+              Container(
+                constraints: BoxConstraints(
+                  // Set minimum height but allow it to grow
+                  minHeight: 200,
+                ),
+                child: GridMovies(
+                  snapshot: AsyncSnapshot.withData(
+                    ConnectionState.done,
+                    movieController.searchResults,
+                  ),
+                  crossAxisCount: isLargeScreen ? 5 : (isMediumScreen ? 3 : 2),
+                  searchQuery: lastSearchQuery ?? "",
+                ),
+              ),
+            ],
           );
-        },
-      ),
+        }
+        // Error state
+        else if (movieController.errorMessage.isNotEmpty) {
+          return _buildErrorState(context, movieController.errorMessage.value,
+              isLargeScreen, isMediumScreen);
+        }
+        // Empty results state (if we've searched but found nothing)
+        else if (lastSearchQuery != null && lastSearchQuery!.isNotEmpty) {
+          return _buildEmptyState(context, isLargeScreen, isMediumScreen);
+        }
+
+        // Default state - show placeholder with proper height
+        return SizedBox(
+          width: double.infinity,
+          height: minContentHeight,
+          child: Center(
+            child: Text(
+              'Search for movies',
+              style: TextStyle(
+                fontSize: isLargeScreen ? 22 : (isMediumScreen ? 20 : 18),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(50),
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 

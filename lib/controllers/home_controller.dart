@@ -1,44 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cinenook/blocs/auth/auth_bloc.dart';
-import 'package:cinenook/blocs/auth/auth_event.dart';
-import 'package:cinenook/blocs/movies/movies_bloc.dart';
-import 'package:cinenook/blocs/movies/movies_event.dart';
-import 'package:cinenook/blocs/popular_movies/popular_movies_bloc.dart'
-    as popular;
-import 'package:cinenook/blocs/now_playing_movies/now_playing_movies_bloc.dart'
-    as now_playing;
-import 'package:cinenook/blocs/upcoming_movies/upcoming_movies_bloc.dart'
-    as upcoming;
+import 'package:get/get.dart';
+import 'package:cinenook/controllers/auth_controller.dart';
+import 'package:cinenook/controllers/movie_controller.dart';
 
-class HomeController {
-  final BuildContext context;
-  DateTime? lastPressed;
+class HomeController extends GetxController {
+  // Observable for back press handling
+  Rx<DateTime?> lastPressed = Rx<DateTime?>(null);
 
-  HomeController(this.context);
+  // Get other controllers via dependency injection
+  final AuthController _authController = Get.find<AuthController>();
+  final MovieController _movieController = Get.find<MovieController>();
 
   void loadMovies() {
-    context.read<popular.PopularMoviesBloc>().add(popular.LoadPopularMovies());
-    context
-        .read<now_playing.NowPlayingMoviesBloc>()
-        .add(now_playing.LoadNowPlayingMovies());
-    context
-        .read<upcoming.UpcomingMoviesBloc>()
-        .add(upcoming.LoadUpcomingMovies());
+    _movieController.getPopularMovies();
+    _movieController.getNowPlayingMovies();
+    _movieController.getUpcomingMovies();
   }
 
   void signOut() {
-    context.read<AuthBloc>().add(LoggedOut());
+    if (_authController.isLoggedIn) {
+      _authController.signOut();
+    }
   }
 
   void performSearch(String query) {
     if (query.isNotEmpty) {
-      context.read<MoviesBloc>().add(SearchMovies(query));
+      _movieController.searchMovies(query);
     }
   }
 
-  void handleBackPress(bool isSearching, Function exitSearchMode) {
+  void handleBackPress(
+      BuildContext context, bool isSearching, Function exitSearchMode) {
     final now = DateTime.now();
 
     if (isSearching) {
@@ -46,18 +39,34 @@ class HomeController {
       return;
     }
 
-    if (lastPressed == null ||
-        now.difference(lastPressed!) > const Duration(seconds: 2)) {
-      lastPressed = now;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Press back again to exit'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    if (lastPressed.value == null ||
+        now.difference(lastPressed.value!) > const Duration(seconds: 2)) {
+      lastPressed.value = now;
+
+      // Show snackbar using microtask to avoid build phase issues
+      Future.microtask(() {
+        if (context.mounted) {
+          // Delay SnackBar presentation slightly
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Press back again to exit'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          });
+        }
+      });
     } else {
-      SystemNavigator.pop();
-      Navigator.of(context).pop();
+      // Perform navigation using microtask to avoid build phase issues
+      Future.microtask(() {
+        SystemNavigator.pop();
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+      });
     }
   }
 }

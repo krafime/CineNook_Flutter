@@ -105,7 +105,7 @@ class MovieDetailsSection extends StatelessWidget {
     return Expanded(
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: isLargeScreen ? 16.0 : 8.0,
+          horizontal: isLargeScreen ? 0 : 0,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

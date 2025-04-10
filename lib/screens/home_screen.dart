@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:cinenook/controllers/home_controller.dart';
 import 'package:cinenook/widgets/home/app_bar_widget.dart';
 import 'package:cinenook/widgets/home/movie_sections.dart';
@@ -17,18 +18,16 @@ class _HomeScreenState extends State<HomeScreen> with AuthGuardMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   String? _lastSearchQuery;
-  late HomeController _homeController;
+
+  // Use GetX controller
+  final HomeController _homeController = Get.put(HomeController());
 
   @override
   void initState() {
     super.initState(); // AuthGuardMixin will call checkAuthentication()
     _searchController.addListener(_onSearchTextChanged);
-  }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _homeController = HomeController(context);
+    // Load movies data
     _homeController.loadMovies();
   }
 
@@ -50,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> with AuthGuardMixin {
       setState(() {
         _isSearching = false;
         _searchController.clear();
+        _lastSearchQuery = null; // Clear last search query
         if (_searchFocusNode.hasFocus) {
           _searchFocusNode.unfocus();
         }
@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> with AuthGuardMixin {
       return;
     }
 
-    _homeController.handleBackPress(_isSearching, () {
+    _homeController.handleBackPress(context, _isSearching, () {
       setState(() {
         _isSearching = false;
         _searchController.clear();
@@ -89,6 +89,11 @@ class _HomeScreenState extends State<HomeScreen> with AuthGuardMixin {
     });
   }
 
+  Widget _getMovieSections(double screenWidth) {
+    // Hapus caching untuk memastikan widget dibangun ulang saat ukuran layar berubah
+    return MovieSections(screenWidth: screenWidth);
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
@@ -97,8 +102,8 @@ class _HomeScreenState extends State<HomeScreen> with AuthGuardMixin {
 
       return PopScope(
         canPop: !_isSearching &&
-            _homeController.lastPressed != null &&
-            DateTime.now().difference(_homeController.lastPressed!) <=
+            _homeController.lastPressed.value != null &&
+            DateTime.now().difference(_homeController.lastPressed.value!) <=
                 const Duration(seconds: 2),
         onPopInvokedWithResult: _handlePopInvoked,
         child: Scaffold(
@@ -124,19 +129,14 @@ class _HomeScreenState extends State<HomeScreen> with AuthGuardMixin {
             ),
           ),
           body: SafeArea(
-            // Added SafeArea
             child: Center(
               child: Container(
                 constraints: BoxConstraints(maxWidth: maxContentWidth),
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   child: Column(
-                    // Wrapped with Column to add SizedBox
                     children: [
-                      SizedBox(
-                          height: screenWidth > 600
-                              ? 8
-                              : 4), // Reduced space at top
+                      SizedBox(height: screenWidth > 600 ? 8 : 4),
                       Padding(
                         padding: EdgeInsets.only(
                           left: screenWidth > 900
@@ -145,9 +145,7 @@ class _HomeScreenState extends State<HomeScreen> with AuthGuardMixin {
                           right: screenWidth > 900
                               ? 32
                               : (screenWidth > 600 ? 24 : 16),
-                          top: screenWidth > 600
-                              ? 24
-                              : 16, // Reduced top padding
+                          top: screenWidth > 600 ? 24 : 16,
                           bottom: screenWidth > 600 ? 24 : 16,
                         ),
                         child: _isSearching
@@ -158,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> with AuthGuardMixin {
                                 lastSearchQuery: _lastSearchQuery,
                                 screenWidth: screenWidth,
                               )
-                            : MovieSections(screenWidth: screenWidth),
+                            : _getMovieSections(screenWidth),
                       ),
                     ],
                   ),

@@ -26,7 +26,7 @@ class NetworkImageWithLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final finalImagePath = (imagePath != null && useImagePath)
-        ? '${Constants.imagePath}$imagePath'
+        ? '${Constants.imagePosterPath}$imagePath'
         : imagePath;
 
     Widget imageWidget;

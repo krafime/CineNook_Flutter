@@ -27,7 +27,7 @@ class MoviePoster extends StatelessWidget {
         height: height,
         child: posterPath.isNotEmpty
             ? Image.network(
-                '${Constants.imagePath}$posterPath',
+                '${Constants.imagePosterPath}$posterPath',
                 fit: BoxFit
                     .fill, // Changed from cover to fill to maintain exact dimensions
                 filterQuality: FilterQuality.high,
