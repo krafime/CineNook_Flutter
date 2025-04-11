@@ -8,11 +8,13 @@ class ListMovies extends StatefulWidget {
     required this.snapshot,
     this.itemWidth = 140,
     this.searchQuery,
+    this.fromSimilarMovies = false,
   });
 
   final AsyncSnapshot<List<Movie>> snapshot;
   final double itemWidth;
   final String? searchQuery;
+  final bool fromSimilarMovies;
 
   @override
   State<ListMovies> createState() => _ListMoviesState();
@@ -49,6 +51,7 @@ class _ListMoviesState extends State<ListMovies> {
                 height: 200,
                 searchQuery: widget.searchQuery,
                 padding: const EdgeInsets.only(right: 8.0),
+                fromSimilarMovies: widget.fromSimilarMovies,
               );
             },
           ),

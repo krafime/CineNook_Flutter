@@ -12,6 +12,9 @@ class HomeController extends GetxController {
   final AuthController _authController = Get.find<AuthController>();
   final MovieController _movieController = Get.find<MovieController>();
 
+  // Observable to track if we're loading more results
+  var isLoadingMore = false.obs;
+
   void loadMovies() {
     _movieController.getPopularMovies();
     _movieController.getNowPlayingMovies();
@@ -30,6 +33,74 @@ class HomeController extends GetxController {
     }
   }
 
+  // New method for debounced search
+  void performDebouncedSearch(String query) {
+    if (query.isNotEmpty) {
+      _movieController.searchMoviesWithDebounce(query);
+    } else {
+      // Clear results if search is empty
+      _movieController.cancelSearch();
+    }
+  }
+
+  // Method to load more search results for pagination
+  Future<void> loadMoreSearchResults(String query) async {
+    if (query.isEmpty ||
+        isLoadingMore.value ||
+        !_movieController.hasMoreSearchResults.value) {
+      return Future.value(); // Return completed Future if conditions not met
+    }
+
+    isLoadingMore.value = true;
+    try {
+      await _movieController.loadMoreSearchResults(query);
+      return Future.value(); // Explicitly return completed Future
+    } catch (e) {
+      // Handle error silently
+      return Future.value();
+    } finally {
+      isLoadingMore.value = false;
+    }
+  }
+
+  // Method untuk mengaktifkan mode pencarian dan restore query
+  void activateSearchMode(String query) {
+    // Perlu mengambil referensi controller pencarian dari home screen
+    // Biasanya ini dipanggil setelah navigasi ke Home selesai
+
+    // Tunggu sampai homeScreen mounted dan widget tree sudah dibangun
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Aktifkan mode pencarian di home screen
+      isSearchModeActive.value = true;
+
+      // Restore query pencarian terakhir
+      if (searchController != null) {
+        searchController!.text = query;
+
+        // Lakukan pencarian dengan query tersebut
+        performSearch(query);
+      }
+    });
+  }
+
+  // Controller dan state untuk search mode
+  TextEditingController? searchController;
+  FocusNode? searchFocusNode;
+  var isSearchModeActive = false.obs;
+
+  // Method untuk melakukan setup controller search
+  void setupSearchController(
+      TextEditingController controller, FocusNode focusNode) {
+    searchController = controller;
+    searchFocusNode = focusNode;
+  }
+
+  // Method untuk clear search controller ketika tidak digunakan
+  void clearSearchControllers() {
+    searchController = null;
+    searchFocusNode = null;
+  }
+
   void handleBackPress(
       BuildContext context, bool isSearching, Function exitSearchMode) {
     final now = DateTime.now();
@@ -39,34 +110,27 @@ class HomeController extends GetxController {
       return;
     }
 
-    if (lastPressed.value == null ||
-        now.difference(lastPressed.value!) > const Duration(seconds: 2)) {
+    if (lastPressed.value == null) {
+      // Show a toast message
       lastPressed.value = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Press back again to exit'),
+          duration: Duration(seconds: 2),
+        ),
+      );
 
-      // Show snackbar using microtask to avoid build phase issues
-      Future.microtask(() {
-        if (context.mounted) {
-          // Delay SnackBar presentation slightly
-          Future.delayed(const Duration(milliseconds: 50), () {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Press back again to exit'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
-          });
+      // Reset after 2 seconds
+      Future.delayed(const Duration(seconds: 2), () {
+        // Only reset if no second press happened
+        if (lastPressed.value != null &&
+            now.difference(lastPressed.value!) <= const Duration(seconds: 2)) {
+          lastPressed.value = null;
         }
       });
     } else {
-      // Perform navigation using microtask to avoid build phase issues
-      Future.microtask(() {
-        SystemNavigator.pop();
-        if (context.mounted) {
-          Navigator.of(context).pop();
-        }
-      });
+      // Second press within 2 seconds, exit the app
+      SystemNavigator.pop();
     }
   }
 }

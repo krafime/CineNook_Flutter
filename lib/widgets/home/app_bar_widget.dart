@@ -10,6 +10,8 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback toggleSearch;
   final VoidCallback signOut;
   final double screenWidth;
+  final VoidCallback clearSearchQuery;
+  final VoidCallback exitSearchMode;
 
   const HomeAppBar({
     super.key,
@@ -20,6 +22,8 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.toggleSearch,
     required this.signOut,
     required this.screenWidth,
+    required this.clearSearchQuery,
+    required this.exitSearchMode,
   });
 
   @override
@@ -62,36 +66,175 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final isLargeScreen = screenWidth > 900;
     final isMediumScreen = screenWidth > 600 && screenWidth <= 900;
+    final maxContentWidth = screenWidth > 1200 ? 1200.0 : double.infinity;
 
-    return AppBar(
-      title: isSearching
-          ? _buildSearchField()
-          : _buildAppTitle(
-              isLargeScreen ? 42.0 : (isMediumScreen ? 36.0 : 32.0)),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      centerTitle: isLargeScreen,
-      toolbarHeight: isLargeScreen ? 80 : (isMediumScreen ? 70 : 60),
-      actions: [
-        IconButton(
-          icon: Icon(
-            isSearching ? Icons.close : Icons.search,
-            size: isLargeScreen ? 32 : (isMediumScreen ? 28 : 24),
-          ),
-          onPressed: toggleSearch,
-          tooltip: isSearching ? 'Cancel search' : 'Search',
-        ),
-        if (!isSearching)
-          IconButton(
-            icon: Icon(
-              Icons.logout,
-              size: isLargeScreen ? 32 : (isMediumScreen ? 28 : 24),
+    // Horizontal padding that matches content padding
+    final horizontalPadding =
+        screenWidth > 900 ? 32.0 : (screenWidth > 600 ? 24.0 : 16.0);
+
+    if (isLargeScreen) {
+      // For large screens, use centered layout with title in center
+      return AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: 80,
+        automaticallyImplyLeading: false,
+        flexibleSpace: Center(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: maxContentWidth),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Add back button if in search mode (left side)
+                if (isSearching)
+                  Positioned(
+                    left: 0,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        size: 32,
+                      ),
+                      onPressed: exitSearchMode,
+                      tooltip: 'Back to home',
+                      padding: const EdgeInsets.all(8.0),
+                    ),
+                  ),
+
+                // Centered title or search field
+                Center(
+                  child: isSearching
+                      ? SizedBox(
+                          width: maxContentWidth * 0.5,
+                          child: _buildSearchField(),
+                        )
+                      : _buildAppTitle(42.0),
+                ),
+
+                // Right-aligned action buttons
+                Positioned(
+                  right: 0,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSearching)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            size: 32,
+                          ),
+                          onPressed: clearSearchQuery,
+                          tooltip: 'Clear search',
+                          padding: const EdgeInsets.all(8.0),
+                        )
+                      else
+                        IconButton(
+                          icon: const Icon(
+                            Icons.search,
+                            size: 32,
+                          ),
+                          onPressed: toggleSearch,
+                          tooltip: 'Search',
+                          padding: const EdgeInsets.all(8.0),
+                        ),
+                      if (!isSearching) const SizedBox(width: 8),
+                      if (!isSearching)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.logout,
+                            size: 32,
+                          ),
+                          onPressed: signOut,
+                          tooltip: 'Logout',
+                          padding: const EdgeInsets.all(8.0),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            onPressed: signOut,
-            tooltip: 'Logout',
           ),
-        SizedBox(width: isLargeScreen ? 24 : (isMediumScreen ? 16 : 8)),
-      ],
-    );
+        ),
+      );
+    } else {
+      // For small and medium screens, use standard row layout
+      return AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: isMediumScreen ? 70 : 60,
+        automaticallyImplyLeading: false,
+        flexibleSpace: Center(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: maxContentWidth),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Back button or app title
+                if (isSearching)
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back,
+                      size: isMediumScreen ? 28 : 24,
+                    ),
+                    onPressed: exitSearchMode,
+                    tooltip: 'Back to home',
+                    padding: const EdgeInsets.all(8.0),
+                  )
+                else
+                  _buildAppTitle(isMediumScreen ? 36.0 : 32.0),
+
+                // Search field (only in search mode)
+                if (isSearching)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildSearchField(),
+                    ),
+                  ),
+
+                // Action buttons with proper spacing
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isSearching)
+                      IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          size: isMediumScreen ? 28 : 24,
+                        ),
+                        onPressed: clearSearchQuery,
+                        tooltip: 'Clear search',
+                        padding: const EdgeInsets.all(8.0),
+                      )
+                    else
+                      IconButton(
+                        icon: Icon(
+                          Icons.search,
+                          size: isMediumScreen ? 28 : 24,
+                        ),
+                        onPressed: toggleSearch,
+                        tooltip: 'Search',
+                        padding: const EdgeInsets.all(8.0),
+                      ),
+                    if (!isSearching) const SizedBox(width: 8),
+                    if (!isSearching)
+                      IconButton(
+                        icon: Icon(
+                          Icons.logout,
+                          size: isMediumScreen ? 28 : 24,
+                        ),
+                        onPressed: signOut,
+                        tooltip: 'Logout',
+                        padding: const EdgeInsets.all(8.0),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
   }
 }

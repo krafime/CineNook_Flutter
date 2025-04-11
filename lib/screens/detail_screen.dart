@@ -79,8 +79,8 @@ class _DetailScreenState extends State<DetailScreen> with AuthGuardMixin {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
-          MovieNavigationHandler.goBack(context,
-              fromDetailScreen: widget.fromDetailScreen);
+          // Selalu gunakan fromDetailScreen=true agar kembali ke film asli jika ini from similar movie
+          MovieNavigationHandler.goBack(context, fromDetailScreen: true);
         }
       },
       child: Scaffold(
@@ -966,8 +966,9 @@ class _DetailScreenState extends State<DetailScreen> with AuthGuardMixin {
             // Use post-frame callback for navigation
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
-                MovieNavigationHandler.goBack(context,
-                    fromDetailScreen: widget.fromDetailScreen);
+                // Gunakan fromDetailScreen=true agar MovieNavigationHandler
+                // menggunakan logika kembali ke film asli jika ini adalah film similar
+                MovieNavigationHandler.goBack(context, fromDetailScreen: true);
               }
             });
           },

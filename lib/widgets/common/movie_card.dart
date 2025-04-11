@@ -12,7 +12,8 @@ class MovieCard extends StatelessWidget {
   final double aspectRatio;
   final EdgeInsets padding;
   final BorderRadius borderRadius;
-  final int? rank; // Add rank parameter
+  final int? rank;
+  final bool fromSimilarMovies;
 
   const MovieCard({
     super.key,
@@ -24,7 +25,8 @@ class MovieCard extends StatelessWidget {
     this.aspectRatio = 2 / 3,
     this.padding = EdgeInsets.zero,
     this.borderRadius = const BorderRadius.all(Radius.circular(10)),
-    this.rank, // Add rank parameter to constructor
+    this.rank,
+    this.fromSimilarMovies = false,
   });
 
   @override
@@ -37,6 +39,7 @@ class MovieCard extends StatelessWidget {
             context,
             movie.id,
             searchQuery: searchQuery,
+            fromSimilarMovies: fromSimilarMovies,
           );
         },
         child: showTitle ? _buildCardWithTitle(context) : _buildPoster(),

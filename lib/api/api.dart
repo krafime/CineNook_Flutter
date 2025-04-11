@@ -71,9 +71,9 @@ class Api {
   }
 
   /// Searches for movies based on a query string
-  Future<List<Movie>> searchMovies(String query) async {
+  Future<List<Movie>> searchMovies(String query, {int page = 1}) async {
     final searchUrl =
-        '$_baseUrl/search/movie?api_key=${Constants.apiKey}&query=$query';
+        '$_baseUrl/search/movie?api_key=${Constants.apiKey}&query=$query&page=$page';
     return _getMovieList(searchUrl, 'Failed to search movies');
   }
 

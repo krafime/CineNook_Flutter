@@ -1,118 +1,159 @@
+import 'package:cinenook/controllers/home_controller.dart';
 import 'package:cinenook/controllers/movie_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 class MovieNavigationHandler {
-  // Track the current movie ID to detect navigation to the same movie
+  // Flag untuk menandai apakah sedang melihat similar movie
+  static bool _viewingSimilarMovie = false;
+
+  // ID film original yang pertama kali dibuka
+  static int? _originalMovieId;
+
+  // Simpan ID movie yang sedang aktif untuk mencegah reload yang tidak perlu
   static int? _currentMovieId;
 
-  // Track navigation stack to handle back button properly
-  static final List<String> _navigationStack = ['/'];
+  // Simpan state asal dari halaman mana user masuk ke detail
+  static String _sourceScreen = 'home'; // default: 'home', 'search'
 
+  // Simpan query pencarian jika user datang dari halaman search
+  static String? _lastSearchQuery;
+
+  /// Navigasi ke detail film
   static Future<void> navigateToMovieDetails(
     BuildContext context,
     int movieId, {
     String? searchQuery,
+    bool fromSimilarMovies = false,
   }) async {
-    // Get the current route
-    final String currentPath = GoRouterState.of(context).matchedLocation;
-
-    // Check if we're already on a detail screen
-    final bool isDetailScreen = currentPath.startsWith('/details/');
-
-    // Save current path to stack if it's not a detail screen
-    if (!isDetailScreen && !_navigationStack.contains(currentPath)) {
-      _navigationStack.add(currentPath);
-    }
-
-    // If we're on the same movie already, do nothing
-    if (_currentMovieId == movieId && isDetailScreen) {
-      return;
-    }
+    // Jika sudah di film yang sama, tidak perlu navigasi
+    if (_currentMovieId == movieId) return;
 
     try {
+      // Jika ini adalah navigasi dari similar movies
+      if (fromSimilarMovies) {
+        // Jika belum dalam mode similar movies, simpan ID film original
+        if (!_viewingSimilarMovie) {
+          _originalMovieId = _currentMovieId;
+          _viewingSimilarMovie = true;
+        }
+      }
+      // Jika navigasi normal (bukan dari similar), reset tracking similar movies
+      else {
+        _viewingSimilarMovie = false;
+        _originalMovieId = null;
+
+        // Simpan state asal user (home atau search)
+        final currentPath = GoRouterState.of(context).matchedLocation;
+        if (currentPath.startsWith('/search')) {
+          _sourceScreen = 'search';
+          _lastSearchQuery = searchQuery;
+        } else {
+          _sourceScreen = 'home';
+        }
+      }
+
       // Update current movie ID
       _currentMovieId = movieId;
 
-      // Get the movie controller
+      // Dapatkan controller
       final movieController = Get.find<MovieController>();
 
-      // Set a flag to indicate we're navigating to avoid UI flicker
+      // Set flag untuk mencegah flicker UI selama navigasi
       movieController.isNavigatingToMovie.value = true;
 
-      // Clear any existing error message that might be shown
+      // Reset pesan error
       movieController.errorMessage.value = '';
 
-      // Handle the navigation first - don't wait for data loading
-      // This ensures the UI transition is smooth
-      if (isDetailScreen) {
-        // If already on detail screen, replace the current route
-        context.goNamed('details', pathParameters: {'id': movieId.toString()});
-      } else {
-        // Navigate from home/search screens to detail screen
-        context
-            .pushNamed('details', pathParameters: {'id': movieId.toString()});
-      }
+      // Navigasi ke halaman detail
+      context.goNamed('details', pathParameters: {'id': movieId.toString()});
 
-      // Now start loading the data after navigation has occurred
-      // Use a small delay to ensure navigation has completed
+      // Delay kecil untuk memastikan navigasi selesai
       await Future.delayed(const Duration(milliseconds: 50));
 
-      // Load movie details if we don't already have them
+      // Load detail film jika belum ada
       if (movieController.movieDetail.value?.id != movieId) {
         movieController.getMovieDetails(movieId);
       }
 
-      // Start loading similar movies after navigation
+      // Load similar movies
       movieController.getSimilarMovies(movieId);
 
-      // Reset navigation flag after a short delay
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Reset flag navigasi
+      await Future.delayed(const Duration(milliseconds: 200));
       movieController.isNavigatingToMovie.value = false;
 
-      // When returning from detail screen, restore search if needed
+      // Restore search results jika perlu
       if (searchQuery != null && context.mounted) {
         movieController.searchMovies(searchQuery);
       }
     } catch (e) {
-      // Fallback navigation method if the named route approach fails
-      context.go('/details/$movieId');
+      // Fallback navigation
+      if (context.mounted) {
+        context.push('/details/$movieId');
+      }
     }
   }
 
+  /// Navigasi ke home screen
   static void navigateToHome(BuildContext context) {
-    // Clear current movie ID when going home
+    // Reset semua state tracking
     _currentMovieId = null;
-    // Clear navigation stack except for home
-    _navigationStack.clear();
-    _navigationStack.add('/');
+    _viewingSimilarMovie = false;
+    _originalMovieId = null;
+    _sourceScreen = 'home';
+    _lastSearchQuery = null;
+
+    // Navigate to home
     context.goNamed('home');
   }
 
+  /// Handle tombol back
   static void goBack(BuildContext context, {bool fromDetailScreen = false}) {
     if (fromDetailScreen) {
-      // Get previous route from stack
-      String previousRoute =
-          _navigationStack.isNotEmpty ? _navigationStack.last : '/';
+      // Jika sedang melihat similar movie dan punya original movie ID
+      if (_viewingSimilarMovie && _originalMovieId != null) {
+        // Buat path ke film original
+        final originalMovieRoute = '/details/$_originalMovieId';
 
-      _currentMovieId = null;
+        // Reset tracking similar movie
+        _viewingSimilarMovie = false;
+        _currentMovieId = _originalMovieId;
+        _originalMovieId = null;
 
-      // If we were in search, go back to search, otherwise go home
-      if (previousRoute.startsWith('/') && context.canPop()) {
-        context.pop();
-      } else {
-        navigateToHome(context);
+        // Navigasi langsung ke film original
+        context.go(originalMovieRoute);
+
+        // Load data film original
+        final movieController = Get.find<MovieController>();
+        movieController.getMovieDetails(_currentMovieId!);
+        movieController.getSimilarMovies(_currentMovieId!);
       }
-    } else if (context.canPop()) {
-      // Normal back button behavior - use Navigator pop
-      _currentMovieId = null;
-      if (_navigationStack.isNotEmpty) {
-        _navigationStack.removeLast();
+      // Kembali ke halaman asal (home atau search)
+      else {
+        _currentMovieId = null;
+
+        if (_sourceScreen == 'search' && _lastSearchQuery != null) {
+          // Kembali ke halaman search dan restore query
+          context.goNamed('home');
+
+          // Delay untuk memastikan navigasi selesai
+          Future.delayed(const Duration(milliseconds: 100), () {
+            // Aktifkan mode pencarian dan restore query
+            final homeController = Get.find<HomeController>();
+            homeController.activateSearchMode(_lastSearchQuery!);
+          });
+        } else {
+          // Kembali ke home
+          navigateToHome(context);
+        }
       }
+    }
+    // Jika dari screen non-detail
+    else if (context.canPop()) {
       context.pop();
     } else {
-      // Can't pop, go to home
       navigateToHome(context);
     }
   }

@@ -64,14 +64,27 @@ class _RelatedMoviesSectionState extends State<RelatedMoviesSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.title,
-          style: TextStyle(
-            fontSize: widget.titleSize,
-            fontWeight: FontWeight.bold,
-          ),
+        // Title section
+        Row(
+          children: [
+            Icon(
+              Icons.movie_filter,
+              size: widget.titleSize + 2,
+              color: Colors.amber,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              widget.title,
+              style: TextStyle(
+                fontSize: widget.titleSize,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+
+        // Similar movies content
         Obx(() {
           // Check if we're loading similar movies for THIS specific movie
           final bool isCurrentlyLoadingThis =
@@ -96,9 +109,12 @@ class _RelatedMoviesSectionState extends State<RelatedMoviesSection> {
               movieController.similarMovies,
             );
 
+            // Tandai jelas bahwa ini adalah "similar movies" sehingga akan diperlakukan khusus
+            // pada navigasi
             return ListMovies(
               snapshot: snapshot,
               itemWidth: 140,
+              fromSimilarMovies: true,
             );
           } else {
             return const SizedBox(
