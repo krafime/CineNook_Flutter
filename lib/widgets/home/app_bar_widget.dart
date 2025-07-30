@@ -40,13 +40,39 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       autofocus: true,
       decoration: InputDecoration(
         hintText: 'Search movies',
-        hintStyle: const TextStyle(color: Colors.white70),
-        border: InputBorder.none,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        hintStyle: TextStyle(
+          color: Colors.white70,
+          fontStyle: FontStyle.italic,
+          fontSize: 14,
+        ),
+        prefixIcon: Icon(
+          Icons.search_rounded,
+          color: Colors.white70,
+          size: 20,
+        ),
+        filled: true,
+        fillColor: Colors.black26,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        isDense: true,
       ),
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+      ),
       onSubmitted: onSubmitted,
       textInputAction: TextInputAction.search,
+      cursorColor: Colors.red.shade400,
+      cursorWidth: 1.5,
     );
   }
 

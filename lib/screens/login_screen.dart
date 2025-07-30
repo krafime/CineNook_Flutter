@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import 'package:cinenook/controllers/auth_controller.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cinenook/controllers/js_interop.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,139 +14,92 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  // Use GetX controller instead of BLoC
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
+  // GetX controller untuk autentikasi
   final AuthController authController = Get.find<AuthController>();
 
-  // Track if welcome message has been shown
-  bool _welcomeMessageShown = false;
-  // Track if error message has been shown
-  String? _lastShownErrorMessage;
+  // Animation controller untuk loading indicator
+  late AnimationController _loadingController;
 
   @override
   void initState() {
     super.initState();
 
-    // Reset loading state and error message when login screen initializes
+    // Initialize animation controller
+    _loadingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+
+    // Reset state saat masuk screen login
     authController.isLoading.value = false;
     authController.errorMessage.value = '';
 
-    // Setup auth listeners outside of build method
-    // Move listener setup to initState
+    // Setup listener untuk perubahan user
     _setupAuthListeners();
 
-    // Check if user is already authenticated - with a post-frame callback
-    // Use Future.microtask instead of addPostFrameCallback to avoid build phase issues
-    Future.microtask(() {
-      if (authController.isLoggedIn && mounted) {
-        // Delay navigation slightly to avoid build phase conflicts
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (mounted) context.goNamed('home');
-        });
+    // Cek apakah user sudah login
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (authController.isLoggedIn) {
+        _navigateToHome();
+      } else {
+        _checkJsLoginState();
       }
     });
   }
 
+  @override
+  void dispose() {
+    _loadingController.dispose();
+    super.dispose();
+  }
+
+  // Cek status login di JavaScript
+  void _checkJsLoginState() {
+    if (!kIsWeb) return;
+
+    try {
+      // Menggunakan helper method dari JS untuk cek login
+      final isLoggedInJs = isUserLoggedInJs();
+      if (isLoggedInJs) {
+        debugPrint('User terdeteksi login via JavaScript, mengarahkan ke home');
+        _navigateToHome();
+      }
+    } catch (e) {
+      debugPrint('Error checking JS login state: $e');
+    }
+  }
+
+  // Navigasi ke home screen
+  void _navigateToHome() {
+    try {
+      context.go('/');
+    } catch (e) {
+      debugPrint('Error navigasi: $e');
+
+      // Fallback: navigasi langsung via JavaScript jika di web
+      if (kIsWeb) {
+        navigateToHomeJs();
+      }
+    }
+  }
+
+  // Setup listener untuk state autentikasi
   void _setupAuthListeners() {
-    // Listen for changes in the current user
+    // Listen untuk perubahan user
     ever(authController.currentUser, (user) {
-      if (user != null && !_welcomeMessageShown) {
-        _welcomeMessageShown = true;
-        // _showSnackBar(context, 'Welcome, ${user.displayName ?? 'User'}!', true);
-
-        // Navigation after successful login - use Go Router instead of Get.offNamed
-        // Use microtask instead of direct navigation to avoid build phase issues
-        Future.microtask(() {
-          if (mounted) {
-            // Delay navigation slightly to avoid build phase conflicts
-            Future.delayed(const Duration(milliseconds: 100), () {
-              try {
-                // Use Go Router which works with GetMaterialApp.router
-                if (mounted) {
-                  context.goNamed('home');
-                  authController.isLoading.value = false;
-                }
-              } catch (e) {
-                debugPrint('Navigation error: $e');
-                // Fallback navigation using standard Navigator
-                if (mounted) {
-                  Navigator.of(context).pushReplacementNamed('/');
-                }
-              }
-            });
-          }
-        });
-      } else if (user == null) {
-        // Reset loading state when user is null (logged out)
-        authController.isLoading.value = false;
+      if (user != null) {
+        // User login berhasil, navigasi ke home
+        _navigateToHome();
       }
     });
 
-    // Listen for error messages
+    // Listen untuk pesan error
     ever(authController.errorMessage, (message) {
-      if (message.isNotEmpty && _lastShownErrorMessage != message) {
-        _lastShownErrorMessage = message;
-        // _showSnackBar(context, message, false);
-      }
+      // Error handling sudah ditangani di UI dengan Obx
     });
   }
-
-  // /// Shows a custom snackbar with success/error styling
-  // void _showSnackBar(BuildContext context, String message, bool isSuccess) {
-  //   // Don't show SnackBar during build
-  //   if (!mounted) return;
-
-  //   final screenWidth = MediaQuery.of(context).size.width;
-
-  //   // Calculate responsive SnackBar width
-  //   double snackBarWidth = screenWidth < 600
-  //       ? screenWidth * 0.9
-  //       : screenWidth < 900
-  //           ? screenWidth * 0.7
-  //           : 600;
-
-  //   final snackBar = SnackBar(
-  //     content: Row(
-  //       children: [
-  //         Icon(
-  //           isSuccess ? Icons.check_circle : Icons.error_outline,
-  //           color: Colors.white,
-  //           size: 24,
-  //         ),
-  //         const SizedBox(width: 16),
-  //         Expanded(
-  //           child: Text(
-  //             message,
-  //             style: const TextStyle(fontSize: 16),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //     backgroundColor: isSuccess ? Colors.green.shade800 : Colors.red.shade800,
-  //     behavior: SnackBarBehavior.floating,
-  //     duration: const Duration(seconds: 3),
-  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  //     margin: EdgeInsets.symmetric(
-  //       horizontal: (screenWidth - snackBarWidth) / 2,
-  //       vertical: 20,
-  //     ),
-  //     elevation: 8,
-  //     action: SnackBarAction(
-  //       label: 'DISMISS',
-  //       textColor: Colors.white,
-  //       onPressed: () {
-  //         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-  //       },
-  //     ),
-  //   );
-
-  //   // Show SnackBar using post-frame callback to avoid build-time issues
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  //     }
-  //   });
-  // }
 
   /// Builds the logo section with app name and tagline
   Widget _buildLogoSection(double logoSize, bool isSmallScreen) {
@@ -195,13 +150,95 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Builds loading indicator dengan animasi
+  Widget _buildLoadingIndicator() {
+    return Obx(() {
+      final isSigningIn = authController.isSigningIn.value;
+      final progress = authController.signInProgress.value;
+
+      if (!isSigningIn) return const SizedBox.shrink();
+
+      return Column(
+        children: [
+          const SizedBox(height: 24),
+          // Progress bar animasi
+          LinearProgressIndicator(
+            value: progress > 0 ? progress : null,
+            minHeight: 6,
+            backgroundColor: Colors.grey[200],
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+          ),
+          const SizedBox(height: 16),
+          // Teks loading dengan animasi titik
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _getLoadingMessage(progress),
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildLoadingDots(),
+            ],
+          ),
+        ],
+      );
+    });
+  }
+
+  // Animated loading dots
+  Widget _buildLoadingDots() {
+    return AnimatedBuilder(
+      animation: _loadingController,
+      builder: (context, child) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (index) {
+            final delay = index * 0.2;
+            final position = _loadingController.value - delay;
+            final opacity = position > 0.0 && position < 1.0
+                ? position < 0.5
+                    ? position * 2
+                    : (1.0 - position) * 2
+                : 0.3;
+
+            return Padding(
+              padding: const EdgeInsets.only(left: 2),
+              child: Opacity(
+                opacity: opacity,
+                child: const Text(
+                  '.',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+
+  // Helper untuk mendapatkan pesan loading berdasarkan progress
+  String _getLoadingMessage(double progress) {
+    if (progress < 0.3) return 'Starting login';
+    if (progress < 0.6) return 'Getting account';
+    if (progress < 0.9) return 'Authenticating';
+    return 'Finishing';
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Using LayoutBuilder instead of Obx to avoid GetX error
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // Define responsive sizes
+          // Ukuran responsif
           final width = constraints.maxWidth;
           final isSmallScreen = width < 600;
           final isMediumScreen = width >= 600 && width < 900;
@@ -213,10 +250,6 @@ class _LoginScreenState extends State<LoginScreen> {
               isSmallScreen ? 48.0 : (isMediumScreen ? 64.0 : 72.0);
           final contentMaxWidth = isLargeScreen ? 500.0 : width;
           final verticalSpacing = isSmallScreen ? 20.0 : 40.0;
-
-          // Directly use values from our controller without Obx wrapper
-          final isLoading = authController.isLoading.value;
-          final errorMessage = authController.errorMessage.value;
 
           return SafeArea(
             child: Center(
@@ -230,24 +263,45 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       SizedBox(height: verticalSpacing),
 
-                      // Logo and app title
+                      // Logo dan judul
                       _buildLogoSection(logoSize, isSmallScreen),
 
                       SizedBox(height: isSmallScreen ? 36 : 48),
 
-                      // Error message
-                      if (errorMessage.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          color: Colors.red[100],
-                          child: Text(
-                            errorMessage,
-                            style: const TextStyle(color: Colors.red),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                      // Pesan error - menggunakan Obx untuk UI reaktif
+                      Obx(() {
+                        final errorMessage = authController.errorMessage.value;
+                        if (errorMessage.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
 
-                      const SizedBox(height: 16),
+                        return Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                  color: Colors.red[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border:
+                                      Border.all(color: Colors.red.shade200)),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline,
+                                      color: Colors.red[700]),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      errorMessage,
+                                      style: TextStyle(color: Colors.red[700]),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }),
 
                       // Google Sign In Button
                       Container(
@@ -255,15 +309,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           maxWidth: isLargeScreen ? 400 : double.infinity,
                         ),
                         alignment: Alignment.center,
-                        child:
-                            _buildGoogleSignInButton(isSmallScreen, isLoading),
+                        child: Obx(() => _buildGoogleSignInButton(
+                            isSmallScreen,
+                            authController.isLoading.value ||
+                                authController.isSigningIn.value)),
                       ),
 
-                      const SizedBox(height: 24),
-
                       // Loading indicator
-                      if (isLoading)
-                        const Center(child: CircularProgressIndicator()),
+                      _buildLoadingIndicator(),
 
                       SizedBox(height: verticalSpacing),
                     ],

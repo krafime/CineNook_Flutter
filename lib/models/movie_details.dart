@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class MovieDetail {
   final int id;
   final String title;
@@ -38,8 +40,8 @@ class MovieDetail {
       try {
         parsedReleaseDate = DateTime.parse(json['release_date'].toString());
       } catch (e) {
-        throw Exception('Failed to parse release date: ${e.toString()}');
-        // Keep parsedReleaseDate as null if parsing fails
+        // Gunakan debugPrint daripada print
+        debugPrint('Warning: Failed to parse release date: ${e.toString()}');
       }
     }
 
@@ -95,6 +97,4 @@ class SpokenLanguage {
       name: json['english_name'] ?? json['name'] ?? '',
     );
   }
-
-  get iso_639_1 => null;
 }

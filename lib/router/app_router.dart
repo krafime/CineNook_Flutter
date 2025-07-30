@@ -3,6 +3,7 @@ import 'package:cinenook/screens/detail_screen.dart';
 import 'package:cinenook/screens/home_screen.dart';
 import 'package:cinenook/screens/login_screen.dart';
 import 'package:cinenook/screens/splash_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -15,9 +16,12 @@ class AppRouter {
   late final GoRouter router = _createRouter();
 
   GoRouter _createRouter() {
+    // Untuk web, langsung mulai dari halaman login/home (skip splash screen)
+    final String initialLocation =
+        kIsWeb ? (authController.isLoggedIn ? '/' : '/login') : '/splash';
+
     return GoRouter(
-      initialLocation: '/splash',
-      debugLogDiagnostics: true,
+      initialLocation: initialLocation,
       refreshListenable: GetXRouterRefreshStream(authController),
       routes: [
         GoRoute(
@@ -40,15 +44,8 @@ class AppRouter {
           path: '/details/:id',
           name: 'details',
           builder: (context, state) {
-            // Parse the ID safely with better error handling
             final idParam = state.pathParameters['id'];
             final id = int.tryParse(idParam ?? '0') ?? 0;
-
-            // Log navigation to help debug
-            debugPrint('Navigating to movie details: $id');
-
-            // Create the detail screen with a unique key based on the movie id
-            // This ensures Flutter creates a new widget when id changes
             return DetailScreen(
               key: ValueKey('detail_screen_$id'),
               id: id,
@@ -59,13 +56,17 @@ class AppRouter {
       ],
       // Use a non-reactive approach for redirects
       redirect: (context, state) {
-        // Use static values for redirection to avoid triggering rebuilds during build
         final loggedIn = authController.isLoggedIn;
         final loggingIn = state.matchedLocation == '/login';
         final splashing = state.matchedLocation == '/splash';
 
-        // Don't redirect away from splash screen initially
-        if (splashing) return null;
+        // Web specific handling - skip splash screen
+        if (kIsWeb && splashing) {
+          return loggedIn ? '/' : '/login';
+        }
+
+        // Don't redirect away from splash screen initially on mobile
+        if (splashing && !kIsWeb) return null;
 
         // If not logged in and not heading to login, redirect to login
         if (!loggedIn && !loggingIn) return '/login';

@@ -22,12 +22,18 @@
 
     <!-- iOS meta tags & icons -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="cinenook" />
-    <link rel="apple-touch-icon" href="icons/Icon-192.png" />
+    <!-- Gunakan URL relatif untuk ikon agar berjalan di GitHub Pages -->
+    <link
+      rel="apple-touch-icon"
+      href="./icons/Icon-192.png"
+      onerror="this.onerror=null; this.href='./favicon.ico';"
+    />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="favicon.ico" />
+    <!-- Favicon dengan fallback -->
+    <link rel="icon" type="image/png" href="./favicon.ico" />
 
     <meta
       name="google-signin-client_id"
@@ -46,7 +52,7 @@
       content="default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src *; style-src * 'unsafe-inline'; font-src * data:;"
     />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+    <!-- Hapus X-Frame-Options dari meta tag karena hanya bisa diatur melalui HTTP header -->
     <meta
       http-equiv="Strict-Transport-Security"
       content="max-age=31536000; includeSubDomains"
@@ -67,6 +73,9 @@
     <div id="flutter_target"></div>
     <script src="flutter_bootstrap.js" async></script>
 
+    <!-- Load our JS helper first -->
+    <script src="js/auth_helper.js"></script>
+
     <!-- PERUBAHAN: Gunakan pendekatan yang lebih aman untuk konfigurasi -->
     <!-- Hapus referensi ke file konfigurasi statis -->
     <!-- <script src="env-config.js"></script> -->
@@ -74,85 +83,301 @@
 
     <!-- Muat konfigurasi secara dinamis dengan obfuscation -->
     <script>
+      // Fungsi untuk hardcoded config untuk GitHub Pages jika config tidak terisi
+      function getHardcodedConfig() {
+        return {
+          apiKey: "AIzaSyAtHCA3pJy7XIliLwKlvwmYqS7fZ90L9UY",
+          authDomain: "cinenook-flutter.firebaseapp.com",
+          projectId: "cinenook-flutter",
+          storageBucket: "cinenook-flutter.firebasestorage.app",
+          messagingSenderId: "215921381040",
+          appId: "1:215921381040:web:e46f695af5e2e7fbfbf575",
+          measurementId: "G-LXV5GBNDME",
+        };
+      }
+
       // Fungsi untuk men-decode config yang dienkripsi dengan penanganan error
       function decodeConfig(encoded) {
         // Cek apakah masih dalam bentuk placeholder
-        if (encoded === "__FIREBASE_CONFIG_PLACEHOLDER__" || encoded.startsWith("__")) {
-          console.warn("Running in development mode with local config");
-          // Dalam mode development, muat konfigurasi dari file lokal
-          return {
-            apiKey: "AIzaSyAtHCA3pJy7XIliLwKlvwmYqS7fZ90L9UY",
-            authDomain: "cinenook-flutter.firebaseapp.com",
-            projectId: "cinenook-flutter",
-            storageBucket: "cinenook-flutter.firebasestorage.app",
-            messagingSenderId: "215921381040",
-            appId: "1:215921381040:web:e46f695af5e2e7fbfbf575",
-            measurementId: "G-LXV5GBNDME"
-          };
+        if (
+          encoded ===
+            "eyJhcGlLZXkiOiJZT1VSX0FQSV9LRVkiLCJhdXRoRG9tYWluIjoiWU9VUl9BVVRIX0RPTUFJTiIsInByb2plY3RJZCI6IllPVVJfUFJPSkVDVF9JRCIsInN0b3JhZ2VCdWNrZXQiOiJZT1VSX1NUT1JBR0VfQlVDS0VUIiwibWVzc2FnaW5nU2VuZGVySWQiOiJZT1VSX01FU1NBR0lOR19TRU5ERVJfSUQiLCJhcHBJZCI6IllPVVJfQVBQX0lEIiwibWVhc3VyZW1lbnRJZCI6IllPVVJfTUVBU1VSRU1FTlRfSUQifQ==" ||
+          encoded.startsWith("__")
+        ) {
+          return getHardcodedConfig();
         }
-        
+
         try {
-          return JSON.parse(atob(encoded));
+          const decodedConfig = JSON.parse(atob(encoded));
+          if (
+            !decodedConfig.apiKey ||
+            decodedConfig.apiKey === "YOUR_API_KEY"
+          ) {
+            return getHardcodedConfig();
+          }
+          return decodedConfig;
         } catch (e) {
-          console.error("Failed to decode configuration:", e);
-          // Fallback ke konfigurasi default untuk development
-          return {
-            apiKey: "AIzaSyAtHCA3pJy7XIliLwKlvwmYqS7fZ90L9UY",
-            authDomain: "cinenook-flutter.firebaseapp.com",
-            projectId: "cinenook-flutter",
-            storageBucket: "cinenook-flutter.firebasestorage.app",
-            messagingSenderId: "215921381040",
-            appId: "1:215921381040:web:e46f695af5e2e7fbfbf575",
-            measurementId: "G-LXV5GBNDME"
-          };
+          return getHardcodedConfig();
         }
       }
 
       // Deteksi mode development
-      const isDevelopment = location.hostname === "localhost" || 
-                            location.hostname === "127.0.0.1";
-      
-      // Definisikan placeholder yang akan diganti saat build
+      const isDevelopment =
+        location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+      // Deteksi GitHub Pages
+      const isGitHubPages = location.hostname.includes("github.io");
+
+      // Gunakan pendekatan yang sesuai berdasarkan environment
       window.firebaseConfig = decodeConfig("__FIREBASE_CONFIG_PLACEHOLDER__");
-      window.recaptchaKey = "__RECAPTCHA_KEY_PLACEHOLDER__" === "__RECAPTCHA_KEY_PLACEHOLDER__" 
-                          ? "6LdbZPoqAAAAAIfEN2FS13cY8QAYAvVhV3nWAF4W"  // fallback untuk development
-                          : "__RECAPTCHA_KEY_PLACEHOLDER__";
-      
-      // Log mode aplikasi
-      console.log(`Running in ${isDevelopment ? "development" : "production"} mode`);
+      window.recaptchaKey =
+        "__RECAPTCHA_KEY_PLACEHOLDER__" === "YOUR_RECAPTCHA_KEY" ||
+        "__RECAPTCHA_KEY_PLACEHOLDER__" === "__RECAPTCHA_KEY_PLACEHOLDER__"
+          ? "6LdbZPoqAAAAAIfEN2FS13cY8QAYAvVhV3nWAF4W"
+          : "__RECAPTCHA_KEY_PLACEHOLDER__";
     </script>
 
     <script type="module">
       // Import the functions you need from the SDKs you need
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
-      import { getAuth } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
       import {
-        initializeAppCheck,
-        ReCaptchaV3Provider,
-      } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app-check.js";
+        getAuth,
+        signInWithPopup,
+        GoogleAuthProvider,
+        setPersistence,
+        browserLocalPersistence,
+      } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
 
-      // Initialize Firebase - Dengan config yang dimuat secara dinamis
-      const app = initializeApp(window.firebaseConfig);
-      const analytics = getAnalytics(app);
-      const auth = getAuth(app);
+      // Function to initialize Firebase
+      window.initFirebaseApp = function () {
+        if (
+          !window.firebaseConfig ||
+          !Object.keys(window.firebaseConfig).length
+        ) {
+          return;
+        }
 
-      // Force HTTPS in production
-      if (location.hostname !== "localhost" && location.protocol !== "https:") {
-        location.href =
-          "https:" +
-          window.location.href.substring(window.location.protocol.length);
+        // Initialize Firebase
+        const app = initializeApp(window.firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+
+        // Set persistence to LOCAL
+        setPersistence(auth, browserLocalPersistence);
+
+        // Sign in with Google Popup
+        window.loginWithGoogle = function () {
+          // Show loading indicator
+          const loadingOverlay = document.createElement("div");
+          loadingOverlay.id = "auth-loading-overlay";
+          loadingOverlay.style.position = "fixed";
+          loadingOverlay.style.top = "0";
+          loadingOverlay.style.left = "0";
+          loadingOverlay.style.width = "100%";
+          loadingOverlay.style.height = "100%";
+          loadingOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+          loadingOverlay.style.zIndex = "9999";
+          loadingOverlay.style.display = "flex";
+          loadingOverlay.style.justifyContent = "center";
+          loadingOverlay.style.alignItems = "center";
+
+          const spinner = document.createElement("div");
+          spinner.style.border = "5px solid #f3f3f3";
+          spinner.style.borderTop = "5px solid #3498db";
+          spinner.style.borderRadius = "50%";
+          spinner.style.width = "50px";
+          spinner.style.height = "50px";
+          spinner.style.animation = "spin 2s linear infinite";
+
+          const styleSheet = document.createElement("style");
+          styleSheet.textContent =
+            "@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }";
+          document.head.appendChild(styleSheet);
+
+          loadingOverlay.appendChild(spinner);
+          document.body.appendChild(loadingOverlay);
+
+          const provider = new GoogleAuthProvider();
+          provider.addScope("profile");
+          provider.addScope("email");
+          provider.setCustomParameters({ prompt: "select_account" });
+
+          // Sign in with popup
+          signInWithPopup(auth, provider)
+            .then((result) => {
+              const user = result.user;
+
+              // Save user info
+              localStorage.setItem("userLoggedIn", "true");
+              localStorage.setItem(
+                "userDisplayName",
+                user.displayName || "User"
+              );
+              localStorage.setItem("userEmail", user.email || "");
+              localStorage.setItem("userPhotoURL", user.photoURL || "");
+              localStorage.setItem("userUID", user.uid || "");
+
+              // Notify Flutter callback
+              if (typeof window.flutterAuthCallback === "function") {
+                window.flutterAuthCallback(
+                  "SIGNED_IN",
+                  JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                  })
+                );
+              }
+
+              // Remove loading overlay
+              try {
+                document.body.removeChild(loadingOverlay);
+              } catch (e) {}
+
+              // Force navigation to home
+              window.location.hash = "/";
+
+              // Fallback for failed navigation
+              setTimeout(() => {
+                if (window.location.hash.includes("/login")) {
+                  window.location.reload();
+                }
+              }, 500);
+            })
+            .catch((error) => {
+              document.body.removeChild(loadingOverlay);
+
+              if (error.code === "auth/unauthorized-domain") {
+                alert(
+                  "Domain is not authorized. Please add " +
+                    location.origin +
+                    " to Firebase Console > Authentication > Settings > Authorized domains"
+                );
+              } else {
+                alert("Login error: " + error.message);
+              }
+            });
+        };
+
+        // Sign out helper
+        window.signOutFromGoogle = function () {
+          auth.signOut().then(() => {
+            // Notify Flutter if callback is available
+            if (typeof window.flutterAuthCallback === "function") {
+              window.flutterAuthCallback("SIGNED_OUT", null);
+            }
+
+            // Redirect to login if needed
+            if (!window.location.hash.includes("/login")) {
+              window.location.hash = "/login";
+            }
+          });
+        };
+      };
+
+      // Initialize Firebase if config is available
+      if (window.firebaseConfig && Object.keys(window.firebaseConfig).length) {
+        window.initFirebaseApp();
+      }
+    </script>
+
+    <!-- Script for handling login -->
+    <script>
+      // Check if user is already logged in
+      document.addEventListener("DOMContentLoaded", function () {
+        const userLoggedIn = localStorage.getItem("userLoggedIn");
+        const userDisplayName = localStorage.getItem("userDisplayName");
+
+        if (userLoggedIn === "true" && userDisplayName) {
+          // Make user data globally accessible to Flutter
+          window._flutter_auth_user = {
+            uid: localStorage.getItem("userUID") || "",
+            email: localStorage.getItem("userEmail") || "",
+            displayName: userDisplayName,
+            photoURL: localStorage.getItem("userPhotoURL") || "",
+          };
+
+          // If on login page but already logged in, redirect to home
+          if (window.location.hash.includes("/login")) {
+            setTimeout(() => {
+              window.location.hash = "/";
+            }, 500);
+          }
+        }
+      });
+
+      // Simple login function - using popup only
+      function loginWithGoogle() {
+        if (window.loginWithGoogle) {
+          window.loginWithGoogle();
+        } else {
+          alert("Firebase is not ready. Please try again in a few seconds.");
+        }
       }
 
-      // Simpan reCAPTCHA key dalam variabel environment
-      const recaptchaSiteKey =
-        window.recaptchaKey || "6LdbZPoqAAAAAIfEN2FS13cY8QAYAvVhV3nWAF4W";
+      // Expose function to window for Flutter
+      window.loginWithGoogle = loginWithGoogle;
 
-      // Tambahkan App Check untuk keamanan tambahan
-      const appCheck = initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider(recaptchaSiteKey),
-        isTokenAutoRefreshEnabled: true,
-      });
+      // Expose helper untuk Flutter
+      window.isUserLoggedIn = function () {
+        return localStorage.getItem("userLoggedIn") === "true";
+      };
+
+      window.getLoggedInUserInfo = function () {
+        if (localStorage.getItem("userLoggedIn") === "true") {
+          return {
+            uid: localStorage.getItem("userUID") || "",
+            displayName: localStorage.getItem("userDisplayName") || "",
+            email: localStorage.getItem("userEmail") || "",
+            photoURL: localStorage.getItem("userPhotoURL") || "",
+          };
+        }
+        return null;
+      };
+
+      // Helper to force auth state in Flutter
+      window.forceFlutterAuthRefresh = function () {
+        if (localStorage.getItem("userLoggedIn") === "true") {
+          // Try to trigger Flutter callback if available
+          if (typeof window.flutterAuthCallback === "function") {
+            const userData = {
+              uid: localStorage.getItem("userUID") || "",
+              displayName: localStorage.getItem("userDisplayName") || "",
+              email: localStorage.getItem("userEmail") || "",
+              photoURL: localStorage.getItem("userPhotoURL") || "",
+            };
+
+            window.flutterAuthCallback("SIGNED_IN", JSON.stringify(userData));
+          }
+
+          // Force navigation if on login page
+          if (window.location.hash === "#/login") {
+            setTimeout(() => {
+              window.location.hash = "/";
+            }, 500);
+          }
+
+          return true;
+        }
+        return false;
+      };
+
+      // Polling method for Flutter to detect user
+      window.checkAuthState = function () {
+        if (window.getCurrentUser) {
+          return window.getCurrentUser();
+        } else if (window._flutter_auth_user) {
+          return window._flutter_auth_user;
+        } else if (localStorage.getItem("userLoggedIn") === "true") {
+          return {
+            displayName: localStorage.getItem("userDisplayName"),
+            email: localStorage.getItem("userEmail"),
+          };
+        }
+        return null;
+      };
     </script>
   </body>
 </html>

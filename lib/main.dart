@@ -38,7 +38,6 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp.router(
       title: 'CineNook',
       theme: ThemeData.dark(useMaterial3: true),
-      debugShowCheckedModeBanner: false,
       routerDelegate: appRouter.router.routerDelegate,
       routeInformationParser: appRouter.router.routeInformationParser,
       routeInformationProvider: appRouter.router.routeInformationProvider,

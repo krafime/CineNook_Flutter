@@ -14,7 +14,7 @@ class MovieController extends GetxController {
   var isLoadingUpcoming = false.obs;
   var isLoadingSearch = false.obs;
   var isLoadingSimilar = false.obs;
-  var isLoadingMore = false.obs; // New loading indicator for pagination
+  var isLoadingMore = false.obs; // Loading indicator for pagination
 
   // General loading state (used for backward compatibility)
   var isLoading = false.obs;
@@ -46,49 +46,53 @@ class MovieController extends GetxController {
 
   MovieController({required this.api});
 
-  Future<void> getPopularMovies() async {
-    isLoadingPopular.value = true;
+  // Helper method to handle common fetch pattern and reduce code duplication
+  Future<List<Movie>> _fetchMovies(
+    Future<List<Movie>> Function() apiCall,
+    RxBool loadingFlag,
+    String errorPrefix,
+  ) async {
+    loadingFlag.value = true;
     isLoading.value = true;
     errorMessage.value = '';
+
     try {
-      final movies = await api.getPopularMovies();
-      popularMovies.assignAll(movies);
+      final movies = await apiCall();
+      return movies;
     } catch (e) {
-      errorMessage.value = 'Failed to load popular movies: ${e.toString()}';
+      errorMessage.value = '$errorPrefix: ${e.toString()}';
+      return [];
     } finally {
-      isLoadingPopular.value = false;
+      loadingFlag.value = false;
       isLoading.value = false;
     }
+  }
+
+  Future<void> getPopularMovies() async {
+    final movies = await _fetchMovies(
+      api.getPopularMovies,
+      isLoadingPopular,
+      'Failed to load popular movies',
+    );
+    popularMovies.assignAll(movies);
   }
 
   Future<void> getNowPlayingMovies() async {
-    isLoadingNowPlaying.value = true;
-    isLoading.value = true;
-    errorMessage.value = '';
-    try {
-      final movies = await api.getNowPlayingMovies();
-      nowPlayingMovies.assignAll(movies);
-    } catch (e) {
-      errorMessage.value = 'Failed to load now playing movies: ${e.toString()}';
-    } finally {
-      isLoadingNowPlaying.value = false;
-      isLoading.value = false;
-    }
+    final movies = await _fetchMovies(
+      api.getNowPlayingMovies,
+      isLoadingNowPlaying,
+      'Failed to load now playing movies',
+    );
+    nowPlayingMovies.assignAll(movies);
   }
 
   Future<void> getUpcomingMovies() async {
-    isLoadingUpcoming.value = true;
-    isLoading.value = true;
-    errorMessage.value = '';
-    try {
-      final movies = await api.getUpcomingMovies();
-      upcomingMovies.assignAll(movies);
-    } catch (e) {
-      errorMessage.value = 'Failed to load upcoming movies: ${e.toString()}';
-    } finally {
-      isLoadingUpcoming.value = false;
-      isLoading.value = false;
-    }
+    final movies = await _fetchMovies(
+      api.getUpcomingMovies,
+      isLoadingUpcoming,
+      'Failed to load upcoming movies',
+    );
+    upcomingMovies.assignAll(movies);
   }
 
   Future<void> getMovieDetails(int id) async {
@@ -150,7 +154,6 @@ class MovieController extends GetxController {
     }
   }
 
-  // Method untuk load more results (pagination) dengan implementasi yang lebih sederhana
   Future<void> loadMoreSearchResults(String query) async {
     if (query.isEmpty || isLoadingMore.value || !hasMoreSearchResults.value) {
       return;
@@ -201,18 +204,12 @@ class MovieController extends GetxController {
   }
 
   Future<void> getSimilarMovies(int movieId) async {
-    isLoadingSimilar.value = true;
-    isLoading.value = true;
-    errorMessage.value = '';
-    try {
-      final movies = await api.getSimilarMovies(movieId);
-      similarMovies.assignAll(movies);
-    } catch (e) {
-      errorMessage.value = 'Failed to load similar movies: ${e.toString()}';
-    } finally {
-      isLoadingSimilar.value = false;
-      isLoading.value = false;
-    }
+    final movies = await _fetchMovies(
+      () => api.getSimilarMovies(movieId),
+      isLoadingSimilar,
+      'Failed to load similar movies',
+    );
+    similarMovies.assignAll(movies);
   }
 
   // Method untuk membersihkan hasil pencarian

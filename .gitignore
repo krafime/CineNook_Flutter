@@ -49,3 +49,6 @@ lib/constants.dart
 
 # Build scripts with secrets
 /scripts/secrets.js
+
+/node_modules/
+android/app/.cxx/

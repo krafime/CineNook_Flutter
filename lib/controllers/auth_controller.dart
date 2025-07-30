@@ -1,120 +1,184 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/scheduler.dart';
+import 'dart:async';
+
+// Import JS hanya untuk web
+import 'js_interop.dart';
 
 class AuthController extends GetxController {
-  final FirebaseAuth _firebaseAuth;
-  final GoogleSignIn _googleSignIn;
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  // Observable variables for state management
+  // Observable variables
   var isLoading = false.obs;
   var errorMessage = ''.obs;
   Rxn<User> currentUser = Rxn<User>();
+  var isSigningIn = false.obs;
+  var signInProgress = 0.0.obs; // 0.0 to 1.0 for loading animation
 
-  AuthController({
-    FirebaseAuth? firebaseAuth,
-    GoogleSignIn? googleSignIn,
-  })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn();
+  // Flag untuk mencegah navigasi ganda
+  var _isNavigating = false;
 
   @override
   void onInit() {
     super.onInit();
 
-    // Configure persistence for web platform
-    _configurePersistence();
-
-    // Set up auth state changes listener
+    // Set up auth state listener
     _firebaseAuth.authStateChanges().listen((User? user) {
       currentUser.value = user;
-      handleAuthChanges();
+      _handleNavigation();
     });
 
-    // Check current user on initialization
+    // Setup web JS callback
+    if (kIsWeb) {
+      _setupJsCallbacks();
+    }
+
+    // Check current user
     checkCurrentUser();
   }
 
-  Future<void> _configurePersistence() async {
+  // Fungsi untuk mengatur callback dari JavaScript
+  void _setupJsCallbacks() {
+    // Setup callback JS->Flutter
+    setupJsCallback();
+
+    // Definisikan handler untuk callback
     if (kIsWeb) {
-      try {
-        // Set persistence to LOCAL to maintain the session across page reloads
-        await _firebaseAuth.setPersistence(Persistence.LOCAL);
-      } catch (e) {
-        errorMessage.value = 'Error setting persistence: ${e.toString()}';
+      // Fungsi yang akan dipanggil ketika ada event dari JavaScript
+      authCallbackHandler(String type, String? userDataJson) {
+        if (type == 'SIGNED_IN' && userDataJson != null) {
+          _reloadFirebaseUser();
+          signInProgress.value = 1.0;
+          isSigningIn.value = false;
+          _forceNavigateToHome(); // Ini adalah pemanggilan metode yang sebelumnya tidak direferensikan
+        } else if (type == 'SIGNED_OUT') {
+          currentUser.value = null;
+        }
       }
+
+      // Register callback handler ke JavaScript
+      registerJsAuthCallback(authCallbackHandler);
     }
   }
 
-  bool get isLoggedIn => currentUser.value != null;
-
+  // Method untuk memeriksa user saat ini
   void checkCurrentUser() {
     isLoading.value = true;
-
     try {
-      // Get current Firebase user
+      // Periksa Firebase Auth
       final user = _firebaseAuth.currentUser;
+      currentUser.value = user;
 
-      // Update current user value atomically to prevent multiple rebuilds
-      if (user != null) {
-        debugPrint('User already signed in: ${user.displayName}');
-        currentUser.value = user;
-      } else {
-        debugPrint('No user signed in');
-        currentUser.value = null;
+      // Jika di web dan user null, cek localStorage
+      if (kIsWeb && user == null) {
+        _checkJsUserLogin();
       }
     } catch (e) {
-      debugPrint('Error checking current user: $e');
-      currentUser.value = null;
+      // Handle error silently
     } finally {
-      // Always set loading to false when done
       isLoading.value = false;
     }
   }
 
-  Future<void> signOut() async {
-    isLoading.value = true;
-    errorMessage.value = '';
+  // Periksa status login di JavaScript (web only)
+  void _checkJsUserLogin() {
+    if (!kIsWeb) return;
+
     try {
-      await _firebaseAuth.signOut();
-      if (_googleSignIn.currentUser != null) {
-        await _googleSignIn.signOut();
+      final isLoggedIn = isUserLoggedInJs();
+      if (isLoggedIn) {
+        _reloadFirebaseUser();
       }
     } catch (e) {
-      errorMessage.value = 'Failed to sign out: ${e.toString()}';
-    } finally {
-      isLoading.value = false;
+      // Handle error silently
     }
   }
 
+  // Reload Firebase user
+  Future<void> _reloadFirebaseUser() async {
+    try {
+      if (_firebaseAuth.currentUser != null) {
+        await _firebaseAuth.currentUser!.reload();
+        currentUser.value = _firebaseAuth.currentUser;
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  // Force navigasi ke home (untuk web)
+  void _forceNavigateToHome() {
+    // Langsung gunakan JavaScript untuk navigasi
+    if (kIsWeb) {
+      try {
+        navigateToHomeJs();
+      } catch (e) {
+        // Handle error silently
+      }
+    }
+  }
+
+  // Handle navigasi berdasarkan auth state
+  void _handleNavigation() {
+    if (_isNavigating) return;
+    _isNavigating = true;
+
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      try {
+        final bool isLoggedIn = currentUser.value != null;
+
+        if (Get.context != null && Get.context!.mounted) {
+          final context = Get.context!;
+          final router = GoRouter.of(context);
+
+          if (isLoggedIn) {
+            router.go('/');
+          } else {
+            router.go('/login');
+          }
+        }
+      } catch (e) {
+        // Fallback untuk web: gunakan JavaScript
+        if (kIsWeb) {
+          final isLoggedIn = currentUser.value != null;
+          final route = isLoggedIn ? '/' : '/login';
+          navigateToRouteJs(route);
+        }
+      } finally {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _isNavigating = false;
+        });
+      }
+    });
+  }
+
+  // Sign in with Google
   Future<void> signInWithGoogle() async {
     isLoading.value = true;
+    isSigningIn.value = true;
+    signInProgress.value = 0.3;
     errorMessage.value = '';
 
     try {
       if (kIsWeb) {
-        // Web implementation
-        GoogleAuthProvider googleProvider = GoogleAuthProvider();
-        googleProvider
-            .addScope('https://www.googleapis.com/auth/contacts.readonly');
-
-        UserCredential userCredential =
-            await _firebaseAuth.signInWithPopup(googleProvider);
-        if (userCredential.user == null) {
-          errorMessage.value = 'Google sign in failed';
-        }
+        // Web: gunakan JavaScript untuk login
+        loginWithGoogleJs();
       } else {
         // Mobile implementation
         final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
         if (googleUser == null) {
           isLoading.value = false;
+          isSigningIn.value = false;
+          signInProgress.value = 0.0;
           return;
         }
 
+        signInProgress.value = 0.6;
         final GoogleSignInAuthentication googleAuth =
             await googleUser.authentication;
         final credential = GoogleAuthProvider.credential(
@@ -122,55 +186,50 @@ class AuthController extends GetxController {
           idToken: googleAuth.idToken,
         );
 
+        signInProgress.value = 0.8;
         final userCredential =
             await _firebaseAuth.signInWithCredential(credential);
-        if (userCredential.user == null) {
-          errorMessage.value = 'Google sign in failed';
-        }
+        signInProgress.value = 1.0;
+        currentUser.value = userCredential.user;
+        isSigningIn.value = false;
       }
     } catch (e) {
-      errorMessage.value = 'Google sign in failed: ${e.toString()}';
+      errorMessage.value = 'Login gagal: ${e.toString()}';
+      signInProgress.value = 0.0;
+      isSigningIn.value = false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Use a separate non-observable method for navigation logic
-  void handleAuthChanges() {
-    // Schedule this after the current build cycle
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      // Navigate based on the current static value, not the observable
-      if (isLoggedIn) {
-        // Navigate to home if app is already initialized
-        if (Get.context != null) {
-          // Use context-less navigation to avoid build issues
-          Get.offAllNamed('/home');
-        }
-      } else {
-        // Navigate to login if app is already initialized
-        if (Get.context != null) {
-          Get.offAllNamed('/login');
-        }
-      }
-    });
-  }
-
-  // Use this method instead of direct navigation when not in a widget
-  Future<void> navigateAfterAuthChange(BuildContext? context) async {
-    await Future.delayed(Duration.zero); // Ensure initialization is complete
+  // Sign out
+  Future<void> signOut() async {
+    isLoading.value = true;
 
     try {
-      if (context != null && context.mounted) {
-        if (isLoggedIn) {
-          context.goNamed('home');
-        } else {
-          context.goNamed('login');
-        }
-      } else {
-        debugPrint('No valid context available for navigation');
+      await _firebaseAuth.signOut();
+      if (!kIsWeb && _googleSignIn.currentUser != null) {
+        await _googleSignIn.signOut();
       }
+
+      if (kIsWeb) {
+        signOutFromGoogleJs();
+      }
+
+      currentUser.value = null;
     } catch (e) {
-      debugPrint('Auth navigation error: $e');
+      errorMessage.value = 'Sign out failed: $e';
+    } finally {
+      isLoading.value = false;
     }
+  }
+
+  // Getter for convenience
+  bool get isLoggedIn => currentUser.value != null;
+
+  // Untuk SplashScreen
+  Future<void> forceAuthSyncWithJS() async {
+    if (!kIsWeb) return;
+    _checkJsUserLogin();
   }
 }

@@ -28,6 +28,9 @@ class _SplashScreenState extends State<SplashScreen>
   // Special handling for web to avoid unnecessary splash screen
   final bool _isWeb = kIsWeb;
 
+  // Track auth sync attempts
+  bool _didAttemptAuthSync = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,8 +38,13 @@ class _SplashScreenState extends State<SplashScreen>
     // Reset loading state when splash screen initializes
     authController.isLoading.value = false;
 
-    // Check user authentication status
+    // Check user authentication status - this method is now public in AuthController
     authController.checkCurrentUser();
+
+    // For web, force auth sync with JavaScript
+    if (kIsWeb) {
+      _forceAuthSync();
+    }
 
     // Set up animations
     _controller = AnimationController(
@@ -65,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen>
       _setupNavigationObservers();
 
       // For web, use a shorter delay
-      final splashDuration = _isWeb ? 500 : 2000;
+      final splashDuration = _isWeb ? 800 : 2000;
 
       // Set a minimum display time for splash screen
       Future.delayed(Duration(milliseconds: splashDuration), () {
@@ -73,6 +81,15 @@ class _SplashScreenState extends State<SplashScreen>
         _checkAndNavigate();
       });
     });
+  }
+
+  // Force authentication sync with JavaScript
+  Future<void> _forceAuthSync() async {
+    if (!_didAttemptAuthSync) {
+      _didAttemptAuthSync = true;
+      debugPrint('Attempting to force auth sync from splash screen');
+      await authController.forceAuthSyncWithJS();
+    }
   }
 
   void _setupNavigationObservers() {
@@ -115,7 +132,14 @@ class _SplashScreenState extends State<SplashScreen>
     if (_isReadyToNavigate.value) {
       // If auth state is already determined (not loading)
       if (!authController.isLoading.value) {
-        _navigateToNextScreen();
+        if (kIsWeb && !_didAttemptAuthSync) {
+          // Ensure we've tried to sync auth state before navigating
+          _forceAuthSync().then((_) {
+            _navigateToNextScreen();
+          });
+        } else {
+          _navigateToNextScreen();
+        }
       }
       // If still loading, wait for it to complete via the auth listener
     }
@@ -126,6 +150,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Get a stable snapshot of the current state to avoid reactivity issues
     final bool isUserLoggedIn = authController.isLoggedIn;
+    debugPrint('Navigating from splash. User logged in: $isUserLoggedIn');
 
     // Defer navigation to after the current build cycle
     SchedulerBinding.instance.addPostFrameCallback((_) {

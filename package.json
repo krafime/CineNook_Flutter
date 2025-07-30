@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "description": "CineNook Flutter Web App",
   "scripts": {
-    "build": "flutter build web",
+    "build": "flutter build web --obfuscate --split-debug-info=./debug-info",
     "inject-secrets": "node scripts/inject-secrets.js",
-    "deploy": "npm run build && npm run inject-secrets"
+    "obfuscate": "node scripts/obfuscate-web.js",
+    "build:prod": "npm run build && npm run obfuscate",
+    "deploy": "npm run build:prod && npm run inject-secrets"
   },
   "devDependencies": {
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "terser": "^5.39.0"
   }
 }
