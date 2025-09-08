@@ -167,9 +167,6 @@ CineNook mendukung multiple platform:
 - ✅ **Android** - Full support
 - ✅ **iOS** - Full support  
 - ✅ **Web** - PWA ready
-- ✅ **Windows** - Desktop support
-- ✅ **Linux** - Desktop support
-- ✅ **macOS** - Desktop support
 
 ## 🌟 Fitur Mendatang
 
